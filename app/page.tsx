@@ -1,17 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import OnboardingForm, { OnboardingData } from './components/OnboardingForm'
 import LoginForm from './components/LoginForm'
 import { createClient } from '@/lib/supabase/client'
 
 export default function Home() {
   const [loading, setLoading] = useState(true)
+  const [checkingRoutine, setCheckingRoutine] = useState(false)
   const [authenticated, setAuthenticated] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+  
+  // Verificar si viene desde el modal de nueva rutina
+  const isNewRoutine = searchParams.get('new') === 'true'
 
   useEffect(() => {
     checkAuth()
@@ -19,17 +24,25 @@ export default function Home() {
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email)
-      setAuthenticated(!!session)
-      setLoading(false)
       
-      // Si hay un login exitoso, refrescar la sesión
+      // Leer el parámetro en el momento del evento
+      const isNew = new URLSearchParams(window.location.search).get('new') === 'true'
+      
       if (event === 'SIGNED_IN' && session) {
         setAuthenticated(true)
-      }
-      
-      // Si hay un logout, actualizar el estado
-      if (event === 'SIGNED_OUT') {
+        setLoading(false)
+        // Si viene desde el modal de nueva rutina, no verificar rutinas
+        if (!isNew) {
+          // Verificar si tiene rutina y redirigir
+          await redirectIfRoutineExists(session.user.id)
+        }
+      } else if (event === 'SIGNED_OUT') {
         setAuthenticated(false)
+        setLoading(false)
+        // El logout ya maneja la redirección en su función específica
+      } else {
+        setAuthenticated(!!session)
+        setLoading(false)
       }
     })
 
@@ -42,9 +55,28 @@ export default function Home() {
       if (error) {
         console.error('Error getting session:', error)
         setAuthenticated(false)
-      } else {
-        console.log('Session check:', session?.user?.email || 'No session')
-        setAuthenticated(!!session && !!session.user)
+        setLoading(false)
+        return
+      }
+      
+      console.log('Session check:', session?.user?.email || 'No session')
+      const isLogged = !!session && !!session.user
+      setAuthenticated(isLogged)
+      
+      if (isLogged && session?.user?.id) {
+        // Si viene desde el modal de nueva rutina, no verificar rutinas existentes
+        if (isNewRoutine) {
+          console.log('Modo nueva rutina: saltando verificación de rutina existente')
+          setLoading(false)
+          return
+        }
+        
+        // Verificar si tiene rutina y redirigir si existe
+        const hasRoutine = await redirectIfRoutineExists(session.user.id)
+        if (hasRoutine) {
+          // Si tiene rutina, la redirección ya se hizo, no mostrar el formulario
+          return
+        }
       }
     } catch (error) {
       console.error('Error checking auth:', error)
@@ -85,12 +117,56 @@ export default function Home() {
       console.log('Login successful, session found:', session.user.email)
       setAuthenticated(true)
       setLoading(false)
-      // Forzar actualización del componente
-      router.refresh()
+      
+      // Si viene desde el modal de nueva rutina, no verificar rutinas
+      if (isNewRoutine) {
+        console.log('Modo nueva rutina: saltando verificación después del login')
+        router.refresh()
+        return
+      }
+      
+      // Verificar si tiene rutina y redirigir si existe
+      const hasRoutine = await redirectIfRoutineExists(session.user.id)
+      if (!hasRoutine) {
+        // Si no hay rutina, refrescamos para mostrar el formulario
+        router.refresh()
+      }
     } else {
       console.error('No session found after login attempts')
       setAuthenticated(false)
       setLoading(false)
+    }
+  }
+
+  const redirectIfRoutineExists = async (userId: string): Promise<boolean> => {
+    setCheckingRoutine(true)
+    try {
+      const { data, error } = await supabase
+        .from('rutinas')
+        .select('id')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error checking routine existence:', error)
+        return false
+      }
+
+      if (data?.id) {
+        console.log('Rutina encontrada, redirigiendo a /rutinas')
+        router.push('/rutinas')
+        return true
+      }
+      
+      console.log('No se encontró rutina, mostrando formulario')
+      return false
+    } catch (err) {
+      console.error('Unexpected error checking routine existence:', err)
+      return false
+    } finally {
+      setCheckingRoutine(false)
     }
   }
 
@@ -194,25 +270,10 @@ export default function Home() {
         throw new Error('El servidor respondió pero con un formato inválido. Verifica la configuración del webhook de n8n.')
       }
       
-      // 4. Guardar la rutina en localStorage o estado para mostrarla
+      // 4. La rutina ya se guardó en Supabase por el backend de n8n
+      // No necesitamos guardar en localStorage, todo está en la base de datos
       if (routineData) {
-        console.log('💾 Guardando rutina en localStorage...')
-        // Guardar en localStorage para que esté disponible en la página de rutinas
-        const routines = JSON.parse(localStorage.getItem('user_routines') || '[]')
-        const newRoutine = {
-          id: `routine_${Date.now()}`,
-          created_at: new Date().toISOString(),
-          config: {
-            frecuencia: data.daysPerWeek,
-            enfoque: data.muscleFocus || 'full_body',
-            genero: data.gender,
-            ubicacion: data.location
-          },
-          rutina: routineData
-        }
-        routines.push(newRoutine)
-        localStorage.setItem('user_routines', JSON.stringify(routines))
-        console.log('✅ Rutina guardada exitosamente')
+        console.log('✅ Rutina generada y guardada en Supabase por n8n')
       } else {
         console.warn('⚠️ No se recibió data de rutina')
       }
@@ -243,8 +304,8 @@ export default function Home() {
     }
   }
 
-  // Loading inicial
-  if (loading) {
+  // Loading inicial o chequeando rutina
+  if (loading || checkingRoutine) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
