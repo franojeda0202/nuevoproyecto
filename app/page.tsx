@@ -1,173 +1,96 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import OnboardingForm, { OnboardingData } from './components/OnboardingForm'
 import LoginForm from './components/LoginForm'
 import { createClient } from '@/lib/supabase/client'
 
+// Helper para obtener el parámetro 'new' de la URL
+const getIsNewRoutine = () => {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('new') === 'true'
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(true)
-  const [checkingRoutine, setCheckingRoutine] = useState(false)
   const [authenticated, setAuthenticated] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [routineChecked, setRoutineChecked] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
-  
-  // Verificar si viene desde el modal de nueva rutina
-  const isNewRoutine = searchParams.get('new') === 'true'
 
+  // Efecto 1: Escuchar estado de autenticación
   useEffect(() => {
-    checkAuth()
+    console.log('🚀 Iniciando listener de autenticación')
     
-    // Escuchar cambios en la autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session?.user?.email)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('👤 Auth state:', event, session?.user?.email || 'sin sesión')
       
-      // Leer el parámetro en el momento del evento
-      const isNew = new URLSearchParams(window.location.search).get('new') === 'true'
-      
-      if (event === 'SIGNED_IN' && session) {
+      if (session?.user) {
         setAuthenticated(true)
-        setLoading(false)
-        // Si viene desde el modal de nueva rutina, no verificar rutinas
-        if (!isNew) {
-          // Verificar si tiene rutina y redirigir
-          await redirectIfRoutineExists(session.user.id)
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setAuthenticated(false)
-        setLoading(false)
-        // El logout ya maneja la redirección en su función específica
+        setUserId(session.user.id)
       } else {
-        setAuthenticated(!!session)
-        setLoading(false)
+        setAuthenticated(false)
+        setUserId(null)
       }
+      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
-  const checkAuth = async () => {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error('Error getting session:', error)
-        setAuthenticated(false)
-        setLoading(false)
-        return
-      }
-      
-      console.log('Session check:', session?.user?.email || 'No session')
-      const isLogged = !!session && !!session.user
-      setAuthenticated(isLogged)
-      
-      if (isLogged && session?.user?.id) {
-        // Si viene desde el modal de nueva rutina, no verificar rutinas existentes
-        if (isNewRoutine) {
-          console.log('Modo nueva rutina: saltando verificación de rutina existente')
-          setLoading(false)
+  // Efecto 2: Verificar rutinas cuando el usuario está autenticado
+  useEffect(() => {
+    // No verificar si está cargando, no autenticado, o ya verificamos
+    if (loading || !authenticated || !userId || routineChecked) return
+    
+    // Si viene del modal de nueva rutina, no verificar
+    if (getIsNewRoutine()) {
+      console.log('🆕 Modo nueva rutina: saltando verificación')
+      setRoutineChecked(true)
+      return
+    }
+
+    const checkRoutine = async () => {
+      console.log('🔍 Verificando si existe rutina...')
+      try {
+        const { data, error } = await supabase
+          .from('rutinas')
+          .select('id')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (error) {
+          console.error('❌ Error verificando rutina:', error)
+          setRoutineChecked(true)
           return
         }
-        
-        // Verificar si tiene rutina y redirigir si existe
-        const hasRoutine = await redirectIfRoutineExists(session.user.id)
-        if (hasRoutine) {
-          // Si tiene rutina, la redirección ya se hizo, no mostrar el formulario
-          return
+
+        if (data?.id) {
+          console.log('✅ Rutina encontrada, redirigiendo...')
+          router.push('/rutinas')
+        } else {
+          console.log('📝 No hay rutina, mostrando formulario')
+          setRoutineChecked(true)
         }
-      }
-    } catch (error) {
-      console.error('Error checking auth:', error)
-      setAuthenticated(false)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleLoginSuccess = async () => {
-    // Esperar un momento para que la sesión se establezca
-    await new Promise(resolve => setTimeout(resolve, 300))
-    
-    // Verificar la sesión después del login
-    let session = null
-    let attempts = 0
-    const maxAttempts = 5
-    
-    while (!session && attempts < maxAttempts) {
-      const { data: { session: currentSession }, error } = await supabase.auth.getSession()
-      
-      if (error) {
-        console.error('Error getting session after login:', error)
-      }
-      
-      if (currentSession && currentSession.user) {
-        session = currentSession
-        break
-      }
-      
-      attempts++
-      if (attempts < maxAttempts) {
-        await new Promise(resolve => setTimeout(resolve, 200))
+      } catch (err) {
+        console.error('❌ Error inesperado:', err)
+        setRoutineChecked(true)
       }
     }
-    
-    if (session) {
-      console.log('Login successful, session found:', session.user.email)
-      setAuthenticated(true)
-      setLoading(false)
-      
-      // Si viene desde el modal de nueva rutina, no verificar rutinas
-      if (isNewRoutine) {
-        console.log('Modo nueva rutina: saltando verificación después del login')
-        router.refresh()
-        return
-      }
-      
-      // Verificar si tiene rutina y redirigir si existe
-      const hasRoutine = await redirectIfRoutineExists(session.user.id)
-      if (!hasRoutine) {
-        // Si no hay rutina, refrescamos para mostrar el formulario
-        router.refresh()
-      }
-    } else {
-      console.error('No session found after login attempts')
-      setAuthenticated(false)
-      setLoading(false)
-    }
-  }
 
-  const redirectIfRoutineExists = async (userId: string): Promise<boolean> => {
-    setCheckingRoutine(true)
-    try {
-      const { data, error } = await supabase
-        .from('rutinas')
-        .select('id')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+    checkRoutine()
+  }, [loading, authenticated, userId, routineChecked, router, supabase])
 
-      if (error) {
-        console.error('Error checking routine existence:', error)
-        return false
-      }
-
-      if (data?.id) {
-        console.log('Rutina encontrada, redirigiendo a /rutinas')
-        router.push('/rutinas')
-        return true
-      }
-      
-      console.log('No se encontró rutina, mostrando formulario')
-      return false
-    } catch (err) {
-      console.error('Unexpected error checking routine existence:', err)
-      return false
-    } finally {
-      setCheckingRoutine(false)
-    }
+  // Handler para login exitoso
+  const handleLoginSuccess = () => {
+    console.log('✅ Login exitoso, el listener actualizará el estado')
+    // El onAuthStateChange se encargará de actualizar el estado
   }
 
   const handleFormSubmit = async (data: OnboardingData) => {
@@ -185,7 +108,7 @@ export default function Home() {
         if (sessionError) {
           console.error(`Error al obtener sesión (intento ${attempts + 1}):`, sessionError)
           if (attempts === maxAttempts - 1) {
-            alert('Error al verificar tu sesión. Por favor, inicia sesión nuevamente.')
+            toast.error('Error al verificar tu sesión. Por favor, inicia sesión nuevamente.')
             setSubmitting(false)
             setAuthenticated(false)
             router.push('/')
@@ -209,7 +132,7 @@ export default function Home() {
       
       if (!session || !session.user) {
         console.error('No se pudo obtener sesión después de', maxAttempts, 'intentos')
-        alert('Debes estar logueado para generar una rutina. Por favor, inicia sesión.')
+        toast.error('Debes estar logueado para generar una rutina. Por favor, inicia sesión.')
         setSubmitting(false)
         setAuthenticated(false)
         // Forzar recarga para mostrar el login
@@ -274,6 +197,7 @@ export default function Home() {
       // No necesitamos guardar en localStorage, todo está en la base de datos
       if (routineData) {
         console.log('✅ Rutina generada y guardada en Supabase por n8n')
+        toast.success('¡Rutina generada exitosamente!')
       } else {
         console.warn('⚠️ No se recibió data de rutina')
       }
@@ -299,13 +223,15 @@ export default function Home() {
         }
       }
       
-      alert(`Hubo un error al procesar tu solicitud:\n\n${errorMessage}`)
+      toast.error(errorMessage, {
+        duration: 6000,
+      })
       setSubmitting(false)
     }
   }
 
-  // Loading inicial o chequeando rutina
-  if (loading || checkingRoutine) {
+  // Loading inicial o verificando rutina
+  if (loading || (authenticated && !routineChecked && !getIsNewRoutine())) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
@@ -340,15 +266,16 @@ export default function Home() {
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('Error al cerrar sesión:', error)
-        alert('Error al cerrar sesión. Intenta nuevamente.')
+        toast.error('Error al cerrar sesión. Intenta nuevamente.')
         return
       }
+      toast.success('Sesión cerrada correctamente')
       setAuthenticated(false)
       // Forzar recarga completa para limpiar el estado
       window.location.href = '/'
     } catch (error) {
       console.error('Error al cerrar sesión:', error)
-      alert('Error al cerrar sesión. Intenta nuevamente.')
+      toast.error('Error al cerrar sesión. Intenta nuevamente.')
     }
   }
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 
 interface Ejercicio {
@@ -54,98 +55,79 @@ export default function RutinasPage() {
 
       setUser(session.user)
 
-      // 1. Obtener la última rutina del usuario
-      const { data: rutina, error: rutinaError } = await supabase
+      // Consulta optimizada: una sola consulta con joins anidados
+      const { data: rutinaData, error: rutinaError } = await supabase
         .from('rutinas')
-        .select('id, nombre, objetivo, frecuencia, created_at')
+        .select(`
+          id,
+          nombre,
+          objetivo,
+          frecuencia,
+          created_at,
+          rutina_dias (
+            id,
+            nombre_dia,
+            orden,
+            rutina_ejercicios (
+              id,
+              series,
+              repeticiones,
+              orden,
+              notas_coach,
+              ejercicios:ejercicio_id (
+                nombre
+              )
+            )
+          )
+        `)
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (rutinaError) {
-        if (rutinaError.code === 'PGRST116') {
-          // No se encontró ninguna rutina
-          setRutinaCompleta(null)
-          setLoading(false)
-          return
-        }
         throw rutinaError
       }
 
-      // 2. Obtener los días de la rutina
-      const { data: dias, error: diasError } = await supabase
-        .from('rutina_dias')
-        .select('id, nombre_dia, orden')
-        .eq('rutina_id', rutina.id)
-        .order('orden', { ascending: true })
-
-      if (diasError) {
-        throw diasError
+      if (!rutinaData) {
+        // No se encontró ninguna rutina
+        setRutinaCompleta(null)
+        setLoading(false)
+        return
       }
 
-      // 3. Para cada día, obtener sus ejercicios con join a la tabla ejercicios
-      const diasConEjercicios: RutinaDia[] = await Promise.all(
-        (dias || []).map(async (dia) => {
-          // Primero obtener los ejercicios de rutina_ejercicios
-          const { data: rutinaEjercicios, error: ejerciciosError } = await supabase
-            .from('rutina_ejercicios')
-            .select('id, ejercicio_id, series, repeticiones, orden, notas_coach')
-            .eq('dia_id', dia.id)
-            .order('orden', { ascending: true })
-
-          if (ejerciciosError) {
-            throw ejerciciosError
-          }
-
-          // Si no hay ejercicios, retornar el día vacío
-          if (!rutinaEjercicios || rutinaEjercicios.length === 0) {
-            return {
-              id: dia.id,
-              nombre_dia: dia.nombre_dia,
-              orden: dia.orden,
-              ejercicios: []
-            }
-          }
-
-          // Obtener los nombres de los ejercicios
-          const ejercicioIds = rutinaEjercicios.map(ej => ej.ejercicio_id)
-          const { data: ejercicios, error: ejerciciosNombresError } = await supabase
-            .from('ejercicios')
-            .select('id, nombre')
-            .in('id', ejercicioIds)
-
-          if (ejerciciosNombresError) {
-            throw ejerciciosNombresError
-          }
-
-          // Crear un mapa de ejercicio_id -> nombre para acceso rápido
-          const ejerciciosMap = new Map(
-            (ejercicios || []).map(ej => [ej.id, ej.nombre])
-          )
-
-          return {
+      // Transformar la respuesta anidada de Supabase a nuestra estructura
+      const rutinaCompleta: RutinaCompleta = {
+        rutina: {
+          id: rutinaData.id,
+          nombre: rutinaData.nombre,
+          objetivo: rutinaData.objetivo,
+          frecuencia: rutinaData.frecuencia,
+          created_at: rutinaData.created_at
+        },
+        dias: (rutinaData.rutina_dias || [])
+          .sort((a, b) => a.orden - b.orden) // Ordenar por orden
+          .map((dia) => ({
             id: dia.id,
             nombre_dia: dia.nombre_dia,
             orden: dia.orden,
-            ejercicios: rutinaEjercicios.map((ej) => ({
-              id: ej.id,
-              nombre: ejerciciosMap.get(ej.ejercicio_id) || 'Ejercicio sin nombre',
-              series: ej.series,
-              repeticiones: ej.repeticiones,
-              orden: ej.orden,
-              notas_coach: ej.notas_coach
-            }))
-          }
-        })
-      )
+            ejercicios: (dia.rutina_ejercicios || [])
+              .sort((a, b) => a.orden - b.orden) // Ordenar ejercicios por orden
+              .map((ej) => ({
+                id: ej.id,
+                nombre: ej.ejercicios?.nombre || 'Ejercicio sin nombre',
+                series: ej.series,
+                repeticiones: ej.repeticiones,
+                orden: ej.orden,
+                notas_coach: ej.notas_coach
+              }))
+          }))
+      }
 
-      setRutinaCompleta({
-        rutina,
-        dias: diasConEjercicios
-      })
+      setRutinaCompleta(rutinaCompleta)
     } catch (error) {
       console.error('Error loading rutina activa:', error)
+      toast.error('Error al cargar la rutina. Intenta nuevamente.')
       setRutinaCompleta(null)
     } finally {
       setLoading(false)
@@ -157,14 +139,15 @@ export default function RutinasPage() {
       const { error } = await supabase.auth.signOut()
       if (error) {
         console.error('Error al cerrar sesión:', error)
-        alert('Error al cerrar sesión. Intenta nuevamente.')
+        toast.error('Error al cerrar sesión. Intenta nuevamente.')
         return
       }
+      toast.success('Sesión cerrada correctamente')
       // Forzar recarga completa para limpiar el estado
       window.location.href = '/'
     } catch (error) {
       console.error('Error al cerrar sesión:', error)
-      alert('Error al cerrar sesión. Intenta nuevamente.')
+      toast.error('Error al cerrar sesión. Intenta nuevamente.')
     }
   }
 
