@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import OnboardingForm, { OnboardingData } from './components/OnboardingForm'
 import LoginForm from './components/LoginForm'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth, useCheckRoutine } from '@/lib/hooks'
+import { HomeSkeleton, GenerandoRutinaSkeleton } from './components/Skeleton'
 
 // Helper para obtener el parámetro 'new' de la URL
 const getIsNewRoutine = () => {
@@ -14,78 +16,16 @@ const getIsNewRoutine = () => {
 }
 
 export default function Home() {
-  const [loading, setLoading] = useState(true)
-  const [authenticated, setAuthenticated] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [routineChecked, setRoutineChecked] = useState(false)
   const router = useRouter()
   const supabase = createClient()
-
-  // Efecto 1: Escuchar estado de autenticación
-  useEffect(() => {
-    console.log('🚀 Iniciando listener de autenticación')
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('👤 Auth state:', event, session?.user?.email || 'sin sesión')
-      
-      if (session?.user) {
-        setAuthenticated(true)
-        setUserId(session.user.id)
-      } else {
-        setAuthenticated(false)
-        setUserId(null)
-      }
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  // Efecto 2: Verificar rutinas cuando el usuario está autenticado
-  useEffect(() => {
-    // No verificar si está cargando, no autenticado, o ya verificamos
-    if (loading || !authenticated || !userId || routineChecked) return
-    
-    // Si viene del modal de nueva rutina, no verificar
-    if (getIsNewRoutine()) {
-      console.log('🆕 Modo nueva rutina: saltando verificación')
-      setRoutineChecked(true)
-      return
-    }
-
-    const checkRoutine = async () => {
-      console.log('🔍 Verificando si existe rutina...')
-      try {
-        const { data, error } = await supabase
-          .from('rutinas')
-          .select('id')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (error) {
-          console.error('❌ Error verificando rutina:', error)
-          setRoutineChecked(true)
-          return
-        }
-
-        if (data?.id) {
-          console.log('✅ Rutina encontrada, redirigiendo...')
-          router.push('/rutinas')
-        } else {
-          console.log('📝 No hay rutina, mostrando formulario')
-          setRoutineChecked(true)
-        }
-      } catch (err) {
-        console.error('❌ Error inesperado:', err)
-        setRoutineChecked(true)
-      }
-    }
-
-    checkRoutine()
-  }, [loading, authenticated, userId, routineChecked, router, supabase])
+  
+  // Custom hooks para autenticación y verificación de rutinas
+  const { loading, authenticated, userId, logout } = useAuth()
+  const { checking: checkingRoutine } = useCheckRoutine(userId, {
+    skipCheck: getIsNewRoutine(),
+    redirectOnFound: true
+  })
 
   // Handler para login exitoso
   const handleLoginSuccess = () => {
@@ -110,8 +50,7 @@ export default function Home() {
           if (attempts === maxAttempts - 1) {
             toast.error('Error al verificar tu sesión. Por favor, inicia sesión nuevamente.')
             setSubmitting(false)
-            setAuthenticated(false)
-            router.push('/')
+            window.location.href = '/'
             return
           }
           attempts++
@@ -134,7 +73,6 @@ export default function Home() {
         console.error('No se pudo obtener sesión después de', maxAttempts, 'intentos')
         toast.error('Debes estar logueado para generar una rutina. Por favor, inicia sesión.')
         setSubmitting(false)
-        setAuthenticated(false)
         // Forzar recarga para mostrar el login
         window.location.href = '/'
         return
@@ -194,17 +132,64 @@ export default function Home() {
       }
       
       // 4. La rutina ya se guardó en Supabase por el backend de n8n
-      // No necesitamos guardar en localStorage, todo está en la base de datos
+      // Pero n8n puede tardar unos segundos más en crear los ejercicios
       if (routineData) {
-        console.log('✅ Rutina generada y guardada en Supabase por n8n')
-        toast.success('¡Rutina generada exitosamente!')
+        console.log('✅ Rutina recibida, esperando que n8n complete los ejercicios...')
+        
+        // Polling: verificar que la rutina tenga ejercicios antes de redirigir
+        const maxAttempts = 10 // máximo 10 intentos
+        const delayBetweenAttempts = 2000 // 2 segundos entre intentos
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          console.log(`🔍 Verificando ejercicios (intento ${attempt}/${maxAttempts})...`)
+          
+          // Esperar antes de verificar
+          await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts))
+          
+          // Verificar si la rutina ya tiene ejercicios
+          const { data: rutinaConEjercicios, error } = await supabase
+            .from('rutinas')
+            .select(`
+              id,
+              rutina_dias (
+                rutina_ejercicios (id)
+              )
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          
+          if (error) {
+            console.error('❌ Error verificando ejercicios:', error)
+            continue
+          }
+          
+          // Contar ejercicios
+          const totalEjercicios = rutinaConEjercicios?.rutina_dias?.reduce(
+            (acc: number, dia: { rutina_ejercicios: { id: string }[] }) => 
+              acc + (dia.rutina_ejercicios?.length || 0), 
+            0
+          ) || 0
+          
+          if (totalEjercicios > 0) {
+            console.log(`✅ Rutina completa con ${totalEjercicios} ejercicios`)
+            toast.success('¡Rutina generada exitosamente!')
+            router.push('/rutinas')
+            return
+          }
+          
+          console.log(`⏳ Aún no hay ejercicios, esperando...`)
+        }
+        
+        // Si después de todos los intentos no hay ejercicios, redirigir igual
+        console.warn('⚠️ Timeout esperando ejercicios, redirigiendo de todas formas')
+        toast.success('¡Rutina generada! Los ejercicios pueden tardar unos segundos más en aparecer.')
+        router.push('/rutinas')
       } else {
         console.warn('⚠️ No se recibió data de rutina')
+        router.push('/rutinas')
       }
-
-      // 5. Redirigir a rutinas para ver la rutina generada
-      console.log('🔄 Redirigiendo a /rutinas...')
-      router.push('/rutinas')
     } catch (error) {
       console.error('Error al generar rutina:', error)
       
@@ -231,15 +216,8 @@ export default function Home() {
   }
 
   // Loading inicial o verificando rutina
-  if (loading || (authenticated && !routineChecked && !getIsNewRoutine())) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600 font-medium">Cargando...</p>
-        </div>
-      </div>
-    )
+  if (loading || checkingRoutine) {
+    return <HomeSkeleton />
   }
 
   // Mostrar login si no está autenticado
@@ -249,34 +227,7 @@ export default function Home() {
 
   // Mostrar loading al generar rutina (esperando respuesta de n8n)
   if (submitting) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black"></div>
-          <p className="mt-4 text-gray-600 font-medium">Generando tu rutina personalizada...</p>
-          <p className="mt-2 text-sm text-gray-500">Esto puede tardar unos momentos</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Función para logout
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Error al cerrar sesión:', error)
-        toast.error('Error al cerrar sesión. Intenta nuevamente.')
-        return
-      }
-      toast.success('Sesión cerrada correctamente')
-      setAuthenticated(false)
-      // Forzar recarga completa para limpiar el estado
-      window.location.href = '/'
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error)
-      toast.error('Error al cerrar sesión. Intenta nuevamente.')
-    }
+    return <GenerandoRutinaSkeleton />
   }
 
   // Mostrar formulario de onboarding con botón de logout
@@ -285,7 +236,7 @@ export default function Home() {
       {/* Botón de logout en esquina superior derecha */}
       <div className="absolute top-4 right-4 z-10">
         <button
-          onClick={handleLogout}
+          onClick={logout}
           className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all shadow-md hover:shadow-lg text-sm"
         >
           Cerrar Sesión
