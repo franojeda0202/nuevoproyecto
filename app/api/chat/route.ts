@@ -3,6 +3,8 @@ import OpenAI from 'openai'
 import { ChatMessage } from '@/lib/types/chat'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { createClient } from '@/lib/supabase/server'
+import { trackEventServer, trackErrorServer } from '@/lib/analytics-server'
 
 // Leer system prompt desde archivo
 const SYSTEM_PROMPT = readFileSync(
@@ -10,8 +12,18 @@ const SYSTEM_PROMPT = readFileSync(
   'utf-8'
 ).trim()
 
+const MODEL = 'gpt-4o-mini'
+
 export async function POST(request: NextRequest) {
+  // Obtener userId al inicio para tracking
+  let userId: string | null = null
+  
   try {
+    // Obtener sesión para tracking
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    userId = session?.user?.id || null
+
     // Verificar API Key
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
@@ -68,7 +80,7 @@ export async function POST(request: NextRequest) {
 
     // Llamar a OpenAI
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: MODEL,
       messages: openaiMessages,
       max_tokens: 300,
       temperature: 0.7
@@ -80,7 +92,23 @@ export async function POST(request: NextRequest) {
       throw new Error('OpenAI no retornó una respuesta')
     }
 
-    console.log('✅ Respuesta recibida de OpenAI')
+    // Extraer usage para tracking
+    const usage = completion.usage
+
+    console.log('✅ Respuesta recibida de OpenAI', usage ? `(${usage.total_tokens} tokens)` : '')
+
+    // Track evento con consumo de tokens (fire-and-forget, no añade latencia)
+    if (userId) {
+      trackEventServer(userId, 'chat_interaccion', {
+        usage: usage ? {
+          prompt: usage.prompt_tokens,
+          completion: usage.completion_tokens,
+          total: usage.total_tokens
+        } : null,
+        model: MODEL,
+        messages_count: recentMessages.length
+      })
+    }
 
     // Retornar respuesta
     const response: ChatMessage = {
@@ -93,6 +121,15 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ Error en API chat:', error)
 
+    const errorMessage = error instanceof Error ? error.message : 'Error al procesar la solicitud'
+
+    // Track error (fire-and-forget)
+    if (userId) {
+      trackErrorServer(userId, 'api/chat', errorMessage, {
+        error_type: error instanceof OpenAI.APIError ? 'openai_api_error' : 'generic_error'
+      })
+    }
+
     // Manejar errores específicos de OpenAI
     if (error instanceof OpenAI.APIError) {
       return NextResponse.json(
@@ -103,7 +140,7 @@ export async function POST(request: NextRequest) {
 
     // Error genérico
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error al procesar la solicitud' },
+      { error: errorMessage },
       { status: 500 }
     )
   }

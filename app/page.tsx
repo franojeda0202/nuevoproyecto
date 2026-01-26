@@ -8,6 +8,7 @@ import LoginForm from './components/LoginForm'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth, useCheckRoutine } from '@/lib/hooks'
 import { HomeSkeleton, GenerandoRutinaSkeleton } from './components/Skeleton'
+import { trackEvent, trackError } from '@/lib/analytics'
 
 // Helper para obtener el parámetro 'new' de la URL
 const getIsNewRoutine = () => {
@@ -174,6 +175,16 @@ export default function Home() {
           
           if (totalEjercicios > 0) {
             console.log(`✅ Rutina completa con ${totalEjercicios} ejercicios`)
+            
+            // Track evento de rutina generada
+            trackEvent('rutina_generada', {
+              dias: data.daysPerWeek,
+              objetivo: data.muscleFocus || 'full_body',
+              genero: data.gender,
+              ubicacion: data.location,
+              total_ejercicios: totalEjercicios
+            })
+            
             toast.success('¡Rutina generada exitosamente!')
             router.push('/rutinas')
             return
@@ -207,6 +218,9 @@ export default function Home() {
           errorMessage = 'El flujo de n8n no está respondiendo correctamente. Verifica que esté activo y configurado.'
         }
       }
+      
+      // Track error
+      trackError('generacion_rutina', errorMessage)
       
       toast.error(errorMessage, {
         duration: 6000,

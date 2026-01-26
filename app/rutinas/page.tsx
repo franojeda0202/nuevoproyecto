@@ -15,6 +15,7 @@ import {
   agregarEjercicio,
   obtenerSiguienteOrden 
 } from '@/lib/services/rutina-service'
+import { trackEvent, trackError } from '@/lib/analytics'
 
 interface RutinaData {
   rutina: { id: string; nombre: string }
@@ -127,12 +128,15 @@ export default function RutinasPage() {
   const handleConfirmDelete = async () => {
     if (!deleteConfirm.ejercicio) return
 
+    const ejercicioAEliminar = deleteConfirm.ejercicio
     setDeleteConfirm(prev => ({ ...prev, deleting: true }))
 
-    const resultado = await eliminarEjercicio(supabase, deleteConfirm.ejercicio.id)
+    const resultado = await eliminarEjercicio(supabase, ejercicioAEliminar.id)
 
     if (!resultado.success) {
-      toast.error(resultado.error || 'Error al eliminar')
+      const errorMsg = resultado.error || 'Error al eliminar'
+      trackError('eliminar_ejercicio', errorMsg)
+      toast.error(errorMsg)
       setDeleteConfirm(prev => ({ ...prev, deleting: false }))
       return
     }
@@ -144,9 +148,16 @@ export default function RutinasPage() {
         ...prev,
         dias: prev.dias.map(dia => ({
           ...dia,
-          ejercicios: dia.ejercicios.filter(ej => ej.id !== deleteConfirm.ejercicio!.id)
+          ejercicios: dia.ejercicios.filter(ej => ej.id !== ejercicioAEliminar.id)
         }))
       }
+    })
+
+    // Track eliminación exitosa
+    trackEvent('ejercicio_manual_edit', {
+      accion: 'eliminar',
+      ejercicio_id: ejercicioAEliminar.ejercicio_id,
+      ejercicio_nombre: ejercicioAEliminar.ejercicio?.nombre
     })
 
     toast.success('Ejercicio eliminado')
@@ -193,6 +204,19 @@ export default function RutinasPage() {
         })
       }
 
+      // Track edición manual
+      const camposEditados: string[] = []
+      if (modalState.ejercicio?.ejercicio_id !== datos.ejercicio_id) camposEditados.push('ejercicio')
+      if (modalState.ejercicio?.series !== datos.series) camposEditados.push('series')
+      if (modalState.ejercicio?.repeticiones !== datos.repeticiones) camposEditados.push('repeticiones')
+      if (modalState.ejercicio?.notas_coach !== datos.notas_coach) camposEditados.push('notas')
+      
+      trackEvent('ejercicio_manual_edit', {
+        accion: 'actualizar',
+        campos_editados: camposEditados,
+        ejercicio_id: datos.ejercicio_id
+      })
+
       toast.success('Ejercicio actualizado')
     } else if (modalState.mode === 'add' && modalState.diaId) {
       // Agregar nuevo ejercicio
@@ -230,6 +254,13 @@ export default function RutinasPage() {
         })
       }
 
+      // Track agregar ejercicio
+      trackEvent('ejercicio_manual_edit', {
+        accion: 'agregar',
+        ejercicio_id: datos.ejercicio_id,
+        dia_id: modalState.diaId
+      })
+
       toast.success('Ejercicio agregado')
     }
   }
@@ -237,7 +268,8 @@ export default function RutinasPage() {
   const handleDeleteEjercicio = async () => {
     if (!modalState.ejercicio) return
 
-    const resultado = await eliminarEjercicio(supabase, modalState.ejercicio.id)
+    const ejercicioEliminado = modalState.ejercicio
+    const resultado = await eliminarEjercicio(supabase, ejercicioEliminado.id)
 
     if (!resultado.success) {
       throw new Error(resultado.error || 'Error al eliminar')
@@ -250,9 +282,16 @@ export default function RutinasPage() {
         ...prev,
         dias: prev.dias.map(dia => ({
           ...dia,
-          ejercicios: dia.ejercicios.filter(ej => ej.id !== modalState.ejercicio!.id)
+          ejercicios: dia.ejercicios.filter(ej => ej.id !== ejercicioEliminado.id)
         }))
       }
+    })
+
+    // Track eliminación
+    trackEvent('ejercicio_manual_edit', {
+      accion: 'eliminar',
+      ejercicio_id: ejercicioEliminado.ejercicio_id,
+      ejercicio_nombre: ejercicioEliminado.ejercicio?.nombre
     })
 
     toast.success('Ejercicio eliminado')

@@ -4,11 +4,13 @@ import { useState, useEffect, useRef } from 'react'
 import { ChatMessage } from '@/lib/types/chat'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
+import { useAuth } from '@/lib/hooks'
 
 const MAX_MESSAGES = 10
 const STORAGE_KEY = 'gymlogic_chat_history'
 
 export default function ChatBubble() {
+  const { authenticated, loading } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -18,6 +20,7 @@ export default function ChatBubble() {
 
   // Cargar historial del localStorage al montar
   useEffect(() => {
+    if (!authenticated) return
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
@@ -32,7 +35,7 @@ export default function ChatBubble() {
     } catch (error) {
       console.error('Error cargando historial:', error)
     }
-  }, [])
+  }, [authenticated])
 
   // Guardar en localStorage cuando cambian los mensajes
   useEffect(() => {
@@ -59,6 +62,11 @@ export default function ChatBubble() {
     }
   }, [isOpen])
 
+  // No mostrar el chat si el usuario no está autenticado
+  if (loading || !authenticated) {
+    return null
+  }
+
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
 
@@ -81,7 +89,7 @@ export default function ChatBubble() {
     setIsLoading(true)
 
     try {
-      // Llamar a la API
+      // Llamar a la API (el tracking se hace server-side con info de tokens)
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -108,7 +116,10 @@ export default function ChatBubble() {
       setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       console.error('Error enviando mensaje:', error)
-      toast.error(error instanceof Error ? error.message : 'Error al enviar mensaje')
+      const errorMessage = error instanceof Error ? error.message : 'Error al enviar mensaje'
+      
+      // El tracking de errores se hace server-side
+      toast.error(errorMessage)
       
       // Remover mensaje del usuario si falló
       setMessages(prev => prev.filter((_, i) => i !== prev.length - 1))
