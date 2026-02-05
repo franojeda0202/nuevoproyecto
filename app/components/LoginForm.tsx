@@ -204,23 +204,24 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-md">
-        {/* Header con branding */}
+    <div className="min-h-screen app-page-bg flex items-center justify-center p-4 md:p-6">
+      <div className="w-full max-w-md flex flex-col items-center">
         <div className="text-center mb-10">
-          <div className="inline-block mb-4">
-            <h1 className="text-5xl md:text-6xl font-black text-black tracking-tight">
-              GymLogic
-            </h1>
-            <div className="h-1 w-24 bg-blue-600 mx-auto mt-2 rounded-full"></div>
-          </div>
-          <p className="text-gray-600 text-lg font-medium">
+          <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
+            GymLogic
+          </h1>
+          <div className="h-1 w-16 bg-blue-600 mx-auto mt-3 rounded-full" />
+          <p className="text-slate-600 text-lg font-medium mt-3 text-slate-600">
             Tu coach digital personal
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 md:p-10 space-y-6 border border-gray-200">
+        <form
+          onSubmit={handleSubmit}
+          className="w-full bg-white rounded-2xl p-8 md:p-10 space-y-6 border border-slate-200/80 shadow-xl shadow-slate-900/10 relative overflow-hidden"
+        >
+          {/* Barra de acento azul */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-500" />
           {/* Tabs Login/Registro */}
           <div className="flex gap-2 mb-6">
             <button
@@ -231,10 +232,10 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
                 setMessage(null)
                 setPasswordError(null)
               }}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
                 mode === 'login'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'
+                  : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
               Iniciar Sesión
@@ -247,10 +248,10 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
                 setMessage(null)
                 setPasswordError(null)
               }}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
+              className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
                 mode === 'signup'
-                  ? 'bg-black text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'
+                  : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
               Registrarse
@@ -266,7 +267,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-5 py-3.5 border-2 border-gray-300 rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
               placeholder="tu@email.com"
               required
             />
@@ -286,8 +287,8 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               type="password"
               value={password}
               onChange={handlePasswordChange}
-              className={`w-full px-5 py-3.5 border-2 rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                passwordError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3.5 h-12 border rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-[#0066FF] focus:border-[#0066FF] transition-all outline-none ${
+                passwordError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-200'
               }`}
               placeholder="••••••••"
               required
@@ -298,31 +299,28 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             )}
           </div>
 
-          {/* Mensajes de error/éxito */}
           {error && (
-            <div className="p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm font-medium">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
               {error}
             </div>
           )}
 
           {message && (
-            <div className="p-4 bg-green-50 border-2 border-green-200 rounded-xl text-green-700 text-sm font-medium">
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium">
               {message}
             </div>
           )}
 
-          {/* Submit button */}
           <button
             type="submit"
             disabled={loading || (mode === 'signup' && !!passwordError)}
-            className="w-full py-4 bg-black text-white rounded-xl font-bold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full py-4 h-12 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all duration-200 active:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
           >
             {loading ? 'Cargando...' : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </button>
         </form>
 
-        {/* Footer */}
-        <p className="text-center text-gray-500 text-sm mt-6">
+        <p className="text-center text-slate-500 text-sm mt-6">
           Rutinas personalizadas con IA • Powered by GymLogic
         </p>
       </div>

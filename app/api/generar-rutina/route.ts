@@ -1,50 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { trackErrorServer } from '@/lib/analytics-server'
+import { checkRateLimit, RATE_LIMIT } from '@/lib/rate-limit'
+
+const GENERIC_ERROR_MESSAGE = 'No se pudo generar la rutina. Intenta de nuevo en unos minutos.'
 
 export async function POST(request: NextRequest) {
+  let userId: string | null = null
+
   try {
     const body = await request.json()
-    
-    const n8nWebhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || 'http://localhost:5678/webhook-test/generar-rutina'
-    
-    // Configurar headers de autenticación si están disponibles
+    const bodyUserId = body?.user_id as string | undefined
+
+    if (!bodyUserId) {
+      return NextResponse.json(
+        { error: 'Solicitud inválida' },
+        { status: 400 }
+      )
+    }
+
+    // Verificar sesión y que el user_id del body coincida con el usuario autenticado
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Debes iniciar sesión para generar una rutina' },
+        { status: 401 }
+      )
+    }
+    if (session.user.id !== bodyUserId) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 403 }
+      )
+    }
+
+    userId = session.user.id
+
+    // Rate limit: 2 rutinas por minuto por usuario
+    const { limit, windowMs } = RATE_LIMIT.GENERAR_RUTINA
+    const rate = checkRateLimit(`generar-rutina:${userId}`, limit, windowMs)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Has alcanzado el límite de generación. Espera un minuto antes de intentar de nuevo.' },
+        { status: 429 }
+      )
+    }
+
+    const n8nWebhookUrl =
+      process.env.N8N_WEBHOOK_URL ||
+      process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL ||
+      'http://localhost:5678/webhook-test/generar-rutina'
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     }
-    
-    // Header Auth - configuración flexible
-    // Puedes usar N8N_HEADER_NAME y N8N_HEADER_VALUE para cualquier header
+
+    // Header de seguridad para el webhook (producción)
+    const webhookSecret = process.env.N8N_WEBHOOK_SECRET
+    if (webhookSecret) {
+      headers['x-webhook-secret'] = webhookSecret
+    }
+
     if (process.env.N8N_HEADER_NAME && process.env.N8N_HEADER_VALUE) {
       headers[process.env.N8N_HEADER_NAME] = process.env.N8N_HEADER_VALUE
     }
-    
-    // Si hay autenticación configurada, agregarla
-    // Opción 1: Basic Auth (usuario:contraseña)
     if (process.env.N8N_AUTH_USER && process.env.N8N_AUTH_PASSWORD) {
       const auth = Buffer.from(`${process.env.N8N_AUTH_USER}:${process.env.N8N_AUTH_PASSWORD}`).toString('base64')
       headers['Authorization'] = `Basic ${auth}`
     }
-    
-    // Opción 2: API Key - Si el valor incluye "Bearer", va en Authorization, sino en header personalizado
     if (process.env.N8N_API_KEY) {
       const apiKeyValue = process.env.N8N_API_KEY.trim()
-      // Si el valor ya incluye "Bearer", usar Authorization header directamente
       if (apiKeyValue.startsWith('Bearer ')) {
         headers['Authorization'] = apiKeyValue
       } else {
-        // Si no, usar el header que especifiques o uno por defecto
         const headerName = process.env.N8N_API_HEADER_NAME || 'X-N8N-API-KEY'
         headers[headerName] = apiKeyValue
       }
     }
-    
-    // Opción 3: Token Bearer
     if (process.env.N8N_TOKEN) {
       headers['Authorization'] = `Bearer ${process.env.N8N_TOKEN}`
     }
-    
-    console.log('🚀 [API Route] Llamando a n8n:', n8nWebhookUrl)
-    console.log('📦 [API Route] Body:', JSON.stringify(body, null, 2))
-    console.log('🔐 [API Route] Headers:', Object.keys(headers).filter(k => k !== 'Authorization' || headers[k]?.toString().substring(0, 10)))
 
     const response = await fetch(n8nWebhookUrl, {
       method: 'POST',
@@ -52,55 +88,53 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     })
 
-    console.log('📥 [API Route] Status:', response.status)
-    console.log('📥 [API Route] Content-Type:', response.headers.get('content-type'))
-
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Error desconocido')
-      console.error('❌ [API Route] Error:', response.status, errorText)
+      const errorText = await response.text().catch(() => '')
+      console.error('[generar-rutina] n8n error:', response.status, errorText?.substring(0, 200))
+      if (userId) {
+        trackErrorServer(userId, 'api/generar-rutina', `n8n ${response.status}: ${errorText?.substring(0, 100)}`, {
+          status: response.status,
+        })
+      }
       return NextResponse.json(
-        { error: `Error del servidor (${response.status}): ${errorText}` },
-        { status: response.status }
+        { error: GENERIC_ERROR_MESSAGE },
+        { status: response.status >= 500 ? 502 : response.status }
       )
     }
 
-    // Obtener el texto de la respuesta primero
     const responseText = await response.text()
-    console.log('📄 [API Route] Respuesta raw:', responseText.substring(0, 500)) // Primeros 500 caracteres
-    
-    // Verificar si la respuesta está vacía
-    if (!responseText || responseText.trim() === '') {
-      console.warn('⚠️ [API Route] Respuesta vacía de n8n')
+    if (!responseText?.trim()) {
+      if (userId) trackErrorServer(userId, 'api/generar-rutina', 'n8n respuesta vacía')
       return NextResponse.json(
-        { error: 'El servidor de n8n respondió con un cuerpo vacío. Verifica que el flujo esté retornando datos correctamente.' },
+        { error: GENERIC_ERROR_MESSAGE },
         { status: 500 }
       )
     }
 
-    // Intentar parsear como JSON
-    let data
+    let data: unknown
     try {
       data = JSON.parse(responseText)
-      console.log('✅ [API Route] Respuesta parseada exitosamente')
-    } catch (jsonError) {
-      console.error('❌ [API Route] Error parseando JSON:', jsonError)
-      console.error('📄 [API Route] Respuesta completa:', responseText)
+    } catch {
+      console.error('[generar-rutina] Respuesta no JSON')
+      if (userId) trackErrorServer(userId, 'api/generar-rutina', 'n8n respuesta no JSON')
       return NextResponse.json(
-        { 
-          error: 'El servidor respondió pero con un formato inválido. Verifica que el flujo de n8n esté retornando JSON válido.',
-          details: responseText.substring(0, 200) // Primeros 200 caracteres para debug
-        },
+        { error: GENERIC_ERROR_MESSAGE },
         { status: 500 }
       )
     }
-    
+
     return NextResponse.json(data)
   } catch (error) {
-    console.error('❌ [API Route] Error:', error)
+    const message = error instanceof Error ? error.message : 'Error desconocido'
+    console.error('[generar-rutina]', message)
+    if (userId) {
+      trackErrorServer(userId, 'api/generar-rutina', message, {
+        error_type: 'exception',
+      })
+    }
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error desconocido' },
+      { error: GENERIC_ERROR_MESSAGE },
       { status: 500 }
     )
   }
 }
-

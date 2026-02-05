@@ -32,9 +32,8 @@ export function SkeletonText({ className = '', lines = 1 }: SkeletonProps & { li
 // Skeleton para la página de rutinas
 export function RutinaSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6">
+    <div className="min-h-screen app-page-bg p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header skeleton */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
           <div className="space-y-2">
             <Skeleton className="h-8 w-48" />
@@ -46,10 +45,8 @@ export function RutinaSkeleton() {
           </div>
         </div>
 
-        {/* Rutina card skeleton */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-          {/* Card header */}
-          <div className="bg-gradient-to-r from-gray-100 to-gray-50 px-6 py-5 border-b border-gray-200">
+        <div className="bg-white rounded-xl shadow-2xl shadow-black/5 border border-slate-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-200">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3">
               <div className="space-y-2">
                 <Skeleton className="h-6 w-56" />
@@ -73,18 +70,15 @@ export function RutinaSkeleton() {
                 </div>
                 
                 {/* Tabla skeleton */}
-                <div className="bg-gray-50 rounded-xl overflow-hidden">
-                  {/* Table header */}
-                  <div className="grid grid-cols-4 gap-4 px-4 py-3 bg-gray-100">
+                <div className="bg-slate-50/50 rounded-xl overflow-hidden">
+                  <div className="grid grid-cols-4 gap-4 px-4 py-3 bg-slate-50/80">
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-4 w-12" />
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-4 w-12" />
                   </div>
-                  
-                  {/* Table rows */}
                   {[1, 2, 3, 4].map((row) => (
-                    <div key={row} className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-gray-200 last:border-0">
+                    <div key={row} className="grid grid-cols-4 gap-4 px-4 py-3 border-b border-slate-100 last:border-0">
                       <Skeleton className="h-4 w-full" />
                       <Skeleton className="h-4 w-8" />
                       <Skeleton className="h-4 w-16" />
@@ -104,9 +98,9 @@ export function RutinaSkeleton() {
 // Skeleton para la página principal (loading inicial)
 export function HomeSkeleton() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+        <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200 p-8 space-y-6">
           {/* Logo/Title */}
           <div className="text-center space-y-2">
             <Skeleton className="h-10 w-10 rounded-full mx-auto" />
@@ -159,23 +153,21 @@ export function GenerandoRutinaSkeleton() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
       <div className="text-center max-w-md">
-        {/* Spinner animado */}
         <div className="relative w-20 h-20 mx-auto mb-6">
-          <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-          <div className="absolute inset-0 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
+          <div className="absolute inset-0 border-4 border-slate-200 rounded-full" />
+          <div className="absolute inset-0 border-4 border-black border-t-transparent rounded-full animate-spin" />
         </div>
         
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
+        <h2 className="text-xl font-bold text-slate-900 mb-2 tracking-tight">
           Generando tu rutina personalizada
         </h2>
-        <p className="text-gray-600 mb-6">
+        <p className="text-slate-600 mb-6">
           Nuestro sistema está creando un plan adaptado a tus objetivos...
         </p>
         
-        {/* Progress steps */}
-        <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-200">
+        <div className="bg-white rounded-2xl p-4 shadow-xl shadow-slate-900/10 border border-slate-200">
           <div className="space-y-3">
             {steps.map((step, i) => {
               const isCompleted = i < currentStep
@@ -185,8 +177,8 @@ export function GenerandoRutinaSkeleton() {
                 <div key={step} className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isCompleted ? 'bg-green-500 text-white' :
-                    isCurrent ? 'bg-black text-white' : 
-                    'bg-gray-100'
+                    isCurrent ? 'bg-blue-600 text-white' : 
+                    'bg-slate-100'
                   }`}>
                     {isCompleted ? (
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,8 +192,8 @@ export function GenerandoRutinaSkeleton() {
                   </div>
                   <span className={`text-sm transition-all duration-300 ${
                     isCompleted ? 'text-green-600 font-medium' :
-                    isCurrent ? 'text-gray-900 font-medium' : 
-                    'text-gray-400'
+                    isCurrent ? 'text-slate-900 font-medium' : 
+                    'text-slate-400'
                   }`}>
                     {step}
                   </span>
@@ -211,7 +203,7 @@ export function GenerandoRutinaSkeleton() {
           </div>
         </div>
         
-        <p className="mt-4 text-xs text-gray-400">
+        <p className="mt-4 text-xs text-slate-400">
           Esto puede tardar unos momentos
         </p>
       </div>

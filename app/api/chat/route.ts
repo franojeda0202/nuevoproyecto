@@ -5,6 +5,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 import { createClient } from '@/lib/supabase/server'
 import { trackEventServer, trackErrorServer } from '@/lib/analytics-server'
+import { checkRateLimit, RATE_LIMIT } from '@/lib/rate-limit'
 
 // Leer system prompt desde archivo
 const SYSTEM_PROMPT = readFileSync(
@@ -13,23 +14,33 @@ const SYSTEM_PROMPT = readFileSync(
 ).trim()
 
 const MODEL = 'gpt-4o-mini'
+const GENERIC_CHAT_ERROR = 'No se pudo procesar tu mensaje. Intenta de nuevo en unos momentos.'
 
 export async function POST(request: NextRequest) {
-  // Obtener userId al inicio para tracking
   let userId: string | null = null
-  
+
   try {
-    // Obtener sesión para tracking
     const supabase = await createClient()
     const { data: { session } } = await supabase.auth.getSession()
     userId = session?.user?.id || null
 
-    // Verificar API Key
+    // Rate limit por usuario (o por IP si no hay sesión, usando un fallback)
+    const rateKey = userId ? `chat:${userId}` : `chat:anon:${request.headers.get('x-forwarded-for') || 'unknown'}`
+    const { limit, windowMs } = RATE_LIMIT.CHAT
+    const rate = checkRateLimit(rateKey, limit, windowMs)
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: 'Has enviado muchos mensajes. Espera un minuto antes de continuar.' },
+        { status: 429 }
+      )
+    }
+
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      console.error('❌ OPENAI_API_KEY no está configurada')
+      console.error('[chat] OPENAI_API_KEY no configurada')
+      if (userId) trackErrorServer(userId, 'api/chat', 'OPENAI_API_KEY missing')
       return NextResponse.json(
-        { error: 'Configuración del servidor incompleta' },
+        { error: GENERIC_CHAT_ERROR },
         { status: 500 }
       )
     }
@@ -71,7 +82,6 @@ export async function POST(request: NextRequest) {
       }))
     ]
 
-    console.log(`📤 Enviando ${recentMessages.length} mensajes a OpenAI`)
 
     // Inicializar cliente OpenAI
     const openai = new OpenAI({
@@ -95,7 +105,6 @@ export async function POST(request: NextRequest) {
     // Extraer usage para tracking
     const usage = completion.usage
 
-    console.log('✅ Respuesta recibida de OpenAI', usage ? `(${usage.total_tokens} tokens)` : '')
 
     // Track evento con consumo de tokens (fire-and-forget, no añade latencia)
     if (userId) {
@@ -119,29 +128,20 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: response })
   } catch (error) {
-    console.error('❌ Error en API chat:', error)
+    const rawMessage = error instanceof Error ? error.message : 'Error desconocido'
+    console.error('[chat]', rawMessage)
 
-    const errorMessage = error instanceof Error ? error.message : 'Error al procesar la solicitud'
-
-    // Track error (fire-and-forget)
     if (userId) {
-      trackErrorServer(userId, 'api/chat', errorMessage, {
-        error_type: error instanceof OpenAI.APIError ? 'openai_api_error' : 'generic_error'
+      trackErrorServer(userId, 'api/chat', rawMessage, {
+        error_type: error instanceof OpenAI.APIError ? 'openai_api_error' : 'generic_error',
       })
     }
 
-    // Manejar errores específicos de OpenAI
-    if (error instanceof OpenAI.APIError) {
-      return NextResponse.json(
-        { error: `Error de OpenAI: ${error.message}` },
-        { status: error.status || 500 }
-      )
-    }
-
-    // Error genérico
+    // No exponer detalles sensibles al frontend
+    const status = error instanceof OpenAI.APIError ? (error.status || 500) : 500
     return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
+      { error: GENERIC_CHAT_ERROR },
+      { status }
     )
   }
 }

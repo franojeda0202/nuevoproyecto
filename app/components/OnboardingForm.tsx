@@ -117,23 +117,20 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4 md:p-6">
+    <div className="min-h-screen app-page-bg flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-2xl">
-        {/* Header con branding */}
         <div className="text-center mb-10">
-          <div className="inline-block mb-4">
-            <h1 className="text-5xl md:text-6xl font-black text-black tracking-tight">
-              GymLogic
-            </h1>
-            <div className="h-1 w-24 bg-blue-600 mx-auto mt-2 rounded-full"></div>
-          </div>
-          <p className="text-gray-600 text-lg font-medium">
+          <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
+            GymLogic
+          </h1>
+          <div className="h-1 w-16 bg-blue-600 mx-auto mt-3 rounded-full" />
+          <p className="text-slate-600 text-lg font-medium mt-3">
             Tu coach digital personal
           </p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-2xl p-8 md:p-10 space-y-8 border border-gray-200">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-8 md:p-10 space-y-8 border border-slate-200/80 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-500" />
           {/* Días por semana */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
@@ -143,7 +140,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
               value={formData.daysPerWeek}
               onChange={(e) => handleFieldChange('daysPerWeek', parseInt(e.target.value))}
               onBlur={() => handleFieldBlur('daysPerWeek')}
-              className={getFieldClasses('daysPerWeek', 'w-full px-5 py-3.5 border-2 border-gray-300 rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 cursor-pointer')}
+              className={getFieldClasses('daysPerWeek', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none cursor-pointer')}
               required
             >
               <option value={2}>2 días</option>
@@ -171,7 +168,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
               value={formData.gender}
               onChange={(e) => handleFieldChange('gender', e.target.value as 'male' | 'female' | 'other')}
               onBlur={() => handleFieldBlur('gender')}
-              className={getFieldClasses('gender', 'w-full px-5 py-3.5 border-2 border-gray-300 rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 cursor-pointer')}
+              className={getFieldClasses('gender', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none cursor-pointer')}
               required
             >
               <option value="male">Masculino</option>
@@ -210,12 +207,12 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
                   Próximamente
                 </span>
               </label>
-              <label className={`relative flex items-center justify-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
+              <label className={`relative flex items-center justify-center p-4 border rounded-xl cursor-pointer transition-all ${
                 formData.location === 'gym' 
-                  ? 'border-blue-600 bg-blue-50 text-blue-900' 
+                  ? 'border-blue-600 bg-blue-50 text-slate-900' 
                   : touched.location && errors.location
-                    ? 'border-red-500 bg-white text-gray-700'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    ? 'border-red-500 bg-white text-slate-700'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
               }`}>
                 <input
                   type="radio"
@@ -228,7 +225,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
                 />
                 <span className="font-semibold">Gimnasio</span>
                 {formData.location === 'gym' && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-blue-600 rounded-full"></div>
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-blue-600 rounded-full" />
                 )}
               </label>
             </div>
@@ -250,7 +247,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
             <select
               value={formData.muscleFocus || ''}
               onChange={(e) => handleFieldChange('muscleFocus', e.target.value || undefined)}
-              className="w-full px-5 py-3.5 border-2 border-gray-300 rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all hover:border-gray-400 cursor-pointer"
+              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none cursor-pointer"
             >
               {MUSCLE_FOCUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -264,10 +261,10 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
           </div>
 
           {/* Resumen de configuración */}
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+          <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200">
             <p className="text-sm font-medium text-gray-700 mb-2">Tu configuración:</p>
             <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700">
                 {formData.daysPerWeek} días/semana
               </span>
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
@@ -284,10 +281,9 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
             </div>
           </div>
 
-          {/* Submit button */}
           <button
             type="submit"
-            className="w-full py-4 bg-black text-white rounded-xl font-bold text-lg hover:bg-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+            className="w-full py-4 h-12 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25 flex items-center justify-center gap-2"
           >
             <span>Generar mi rutina</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

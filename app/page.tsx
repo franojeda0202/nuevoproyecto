@@ -251,7 +251,7 @@ export default function Home() {
       <div className="absolute top-4 right-4 z-10">
         <button
           onClick={logout}
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-all shadow-md hover:shadow-lg text-sm"
+          className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-all duration-200 text-sm"
         >
           Cerrar Sesión
         </button>
