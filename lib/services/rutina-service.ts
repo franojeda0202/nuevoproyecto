@@ -164,13 +164,18 @@ export async function actualizarEjercicio(
     }
 
     // Ejecutar actualización
-    const { error: updateError } = await supabase
+    const { data: filasActualizadas, error: updateError } = await supabase
       .from('rutina_ejercicios')
       .update(updateData)
       .eq('id', datos.id)
+      .select('id')
 
     if (updateError) {
       throw updateError
+    }
+
+    if (!filasActualizadas || filasActualizadas.length === 0) {
+      return { success: false, error: 'El ejercicio no existe o ya fue eliminado' }
     }
 
     // Obtener el ejercicio actualizado con info completa
