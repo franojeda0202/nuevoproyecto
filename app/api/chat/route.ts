@@ -7,16 +7,19 @@ import { createClient } from '@/lib/supabase/server'
 import { trackEventServer, trackErrorServer } from '@/lib/analytics-server'
 import { checkRateLimit, RATE_LIMIT } from '@/lib/rate-limit'
 
-// Leer system prompt desde archivo
-const SYSTEM_PROMPT = readFileSync(
-  join(process.cwd(), 'lib', 'prompts', 'system-prompt.txt'),
-  'utf-8'
-).trim()
+// Cliente OpenAI a nivel de módulo (una sola instancia, consistente con generar-rutina/route.ts)
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 const MODEL = 'gpt-4o-mini'
 const GENERIC_CHAT_ERROR = 'No se pudo procesar tu mensaje. Intenta de nuevo en unos momentos.'
 
 export async function POST(request: NextRequest) {
+  // Leer system prompt dentro del handler (seguro en Vercel serverless)
+  const SYSTEM_PROMPT = readFileSync(
+    join(process.cwd(), 'lib', 'prompts', 'system-prompt.txt'),
+    'utf-8'
+  ).trim()
+
   let userId: string | null = null
 
   try {
@@ -82,11 +85,6 @@ export async function POST(request: NextRequest) {
       }))
     ]
 
-
-    // Inicializar cliente OpenAI
-    const openai = new OpenAI({
-      apiKey: apiKey
-    })
 
     // Llamar a OpenAI
     const completion = await openai.chat.completions.create({
