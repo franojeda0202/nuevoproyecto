@@ -12,6 +12,25 @@ const GENERIC_ERROR_MESSAGE = 'No se pudo generar la rutina. Intenta de nuevo en
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
+const VALORES_VALIDOS = {
+  genero: ['male', 'female', 'other'] as const,
+  ubicacion: ['gym', 'home'] as const,
+  enfoque: ['pecho', 'espalda', 'hombros', 'brazos', 'piernas', 'gluteos', 'core', 'full_body'] as const,
+  frecuencia: { min: 2, max: 6 },
+}
+
+function validarConfig(config: GenerarRutinaRequest['config']): boolean {
+  if (
+    typeof config.frecuencia !== 'number' ||
+    config.frecuencia < VALORES_VALIDOS.frecuencia.min ||
+    config.frecuencia > VALORES_VALIDOS.frecuencia.max
+  ) return false
+  if (config.genero && !(VALORES_VALIDOS.genero as readonly string[]).includes(config.genero)) return false
+  if (config.ubicacion && !(VALORES_VALIDOS.ubicacion as readonly string[]).includes(config.ubicacion)) return false
+  if (config.enfoque && !(VALORES_VALIDOS.enfoque as readonly string[]).includes(config.enfoque)) return false
+  return true
+}
+
 function buildUserPrompt(userId: string, config: GenerarRutinaRequest['config'], ejercicios: unknown[]): string {
   return `Actúa como GymLogic AI. Diseña una rutina de alta optimización biomecánica.
 
@@ -56,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     // Validar que config exista y tenga la forma esperada
     const config = body?.config as GenerarRutinaRequest['config'] | undefined
-    if (!config || typeof config !== 'object' || typeof config.frecuencia !== 'number') {
+    if (!config || typeof config !== 'object' || !validarConfig(config)) {
       return NextResponse.json({ error: 'Configuración de rutina inválida' }, { status: 400 })
     }
 
