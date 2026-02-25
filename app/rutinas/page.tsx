@@ -47,23 +47,12 @@ export default function RutinasPage() {
   const { loading: loadingAuth, authenticated, user, userId, logout } = useAuth()
 
   // Cargar rutina cuando el usuario está autenticado
-  useEffect(() => {
-    if (loadingAuth) return
-    
-    if (!authenticated || !userId) {
-      router.push('/')
-      return
-    }
-
-    loadRutina()
-  }, [loadingAuth, authenticated, userId])
-
   const loadRutina = useCallback(async () => {
     if (!userId) return
-    
+
     setLoadingRutina(true)
     const resultado = await obtenerRutinaEditable(supabase, userId)
-    
+
     if (resultado.success && resultado.data) {
       setRutinaData(resultado.data)
     } else {
@@ -72,9 +61,20 @@ export default function RutinasPage() {
         toast.error(resultado.error)
       }
     }
-    
+
     setLoadingRutina(false)
   }, [userId, supabase])
+
+  useEffect(() => {
+    if (loadingAuth) return
+
+    if (!authenticated || !userId) {
+      router.push('/')
+      return
+    }
+
+    loadRutina()
+  }, [loadingAuth, authenticated, userId, loadRutina, router])
 
   // ==========================================
   // Handlers del Modal
