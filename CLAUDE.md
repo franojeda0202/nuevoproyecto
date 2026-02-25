@@ -46,7 +46,8 @@ GymLogic is a Next.js 16 App Router app for generating and managing personalized
 - `lib/hooks/` — `useAuth`, `useCheckRoutine`, `useEjerciciosPool`
 - `lib/services/rutina-service.ts` — All Supabase CRUD operations; receives client as parameter
 - `lib/types/` — TypeScript types for DB entities (`database.ts`) and chat (`chat.ts`)
-- `lib/prompts/system-prompt.txt` — GymLogic AI coach persona (Spanish)
+- `lib/prompts/system-prompt.txt` — GymLogic AI coach persona for chat (Spanish)
+- `lib/prompts/system-prompt-rutina.txt` — GymLogic AI routine generation prompt (Spanish)
 
 ### Service Layer Pattern
 
