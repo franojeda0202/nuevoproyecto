@@ -20,11 +20,7 @@ export function useAuth(): UseAuthReturn {
   const supabase = createClient()
 
   useEffect(() => {
-    console.log('🚀 useAuth: Iniciando listener de autenticación')
-    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('👤 useAuth:', event, session?.user?.email || 'sin sesión')
-      
       if (session?.user) {
         setAuthenticated(true)
         setUser(session.user)
