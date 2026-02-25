@@ -92,139 +92,54 @@ export default function Home() {
         }
       }
 
-      console.log('🚀 Iniciando llamada a n8n a través de API route...')
-      console.log('📦 Body:', JSON.stringify(requestBody, null, 2))
-      console.log('👤 User ID:', userId)
-
       let response
       try {
-        const startTime = Date.now()
         // Usar nuestra API route en lugar de llamar directamente a n8n
         response = await fetch('/api/generar-rutina', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
         })
-        const endTime = Date.now()
-        console.log(`⏱️ Tiempo de respuesta: ${endTime - startTime}ms`)
-        console.log('📥 Status:', response.status, response.statusText)
       } catch (fetchError: any) {
         // Error de conexión (Failed to fetch)
         if (fetchError.message === 'Failed to fetch' || fetchError.name === 'TypeError') {
-          throw new Error('No se pudo conectar con el servidor. Por favor, verifica que el flujo de n8n esté activo y que la URL del webhook sea correcta.')
+          throw new Error('No se pudo conectar con el servidor. Por favor, intenta de nuevo en unos minutos.')
         }
         throw fetchError
       }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Error desconocido' }))
-        console.error('❌ Error del servidor:', response.status, errorData)
-        throw new Error(errorData.error || `Error del servidor (${response.status}): El flujo de n8n podría no estar activo`)
+        throw new Error(errorData.error || `Error del servidor (${response.status})`)
       }
 
       // 3. Obtener la rutina generada de la respuesta
       let routineData
       try {
         routineData = await response.json()
-        console.log('✅ Rutina recibida:', routineData)
       } catch (jsonError) {
-        console.error('❌ Error parseando JSON:', jsonError)
-        throw new Error('El servidor respondió pero con un formato inválido. Verifica la configuración del webhook de n8n.')
+        throw new Error('El servidor respondió pero con un formato inválido.')
       }
-      
-      // 4. La rutina ya se guardó en Supabase por el backend de n8n
-      // Pero n8n puede tardar unos segundos más en crear los ejercicios
+
+      // 4. La rutina ya está guardada en Supabase, redirigir directamente
       if (routineData) {
-        console.log('✅ Rutina recibida, esperando que n8n complete los ejercicios...')
-        
-        // Polling: verificar que la rutina tenga ejercicios antes de redirigir
-        const maxAttempts = 10 // máximo 10 intentos
-        const delayBetweenAttempts = 2000 // 2 segundos entre intentos
-        
-        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-          console.log(`🔍 Verificando ejercicios (intento ${attempt}/${maxAttempts})...`)
-          
-          // Esperar antes de verificar
-          await new Promise(resolve => setTimeout(resolve, delayBetweenAttempts))
-          
-          // Verificar si la rutina ya tiene ejercicios
-          const { data: rutinaConEjercicios, error } = await supabase
-            .from('rutinas')
-            .select(`
-              id,
-              rutina_dias (
-                rutina_ejercicios (id)
-              )
-            `)
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          
-          if (error) {
-            console.error('❌ Error verificando ejercicios:', error)
-            continue
-          }
-          
-          // Contar ejercicios
-          const totalEjercicios = rutinaConEjercicios?.rutina_dias?.reduce(
-            (acc: number, dia: { rutina_ejercicios: { id: string }[] }) => 
-              acc + (dia.rutina_ejercicios?.length || 0), 
-            0
-          ) || 0
-          
-          if (totalEjercicios > 0) {
-            console.log(`✅ Rutina completa con ${totalEjercicios} ejercicios`)
-            
-            // Track evento de rutina generada
-            trackEvent('rutina_generada', {
-              dias: data.daysPerWeek,
-              objetivo: data.muscleFocus || 'full_body',
-              genero: data.gender,
-              ubicacion: data.location,
-              total_ejercicios: totalEjercicios
-            })
-            
-            toast.success('¡Rutina generada exitosamente!')
-            router.push('/rutinas')
-            return
-          }
-          
-          console.log(`⏳ Aún no hay ejercicios, esperando...`)
-        }
-        
-        // Si después de todos los intentos no hay ejercicios, redirigir igual
-        console.warn('⚠️ Timeout esperando ejercicios, redirigiendo de todas formas')
-        toast.success('¡Rutina generada! Los ejercicios pueden tardar unos segundos más en aparecer.')
-        router.push('/rutinas')
-      } else {
-        console.warn('⚠️ No se recibió data de rutina')
+        trackEvent('rutina_generada', {
+          dias: data.daysPerWeek,
+          objetivo: data.muscleFocus || 'full_body',
+          genero: data.gender,
+          ubicacion: data.location,
+        })
+        toast.success('¡Rutina generada exitosamente!')
         router.push('/rutinas')
       }
     } catch (error) {
       console.error('Error al generar rutina:', error)
-      
-      let errorMessage = 'Error desconocido'
+      let errorMessage = 'No se pudo generar la rutina. Intenta de nuevo en unos minutos.'
       if (error instanceof Error) {
         errorMessage = error.message
-        
-        // Mensajes más específicos según el tipo de error
-        if (error.message.includes('Failed to fetch') || error.message.includes('No se pudo conectar')) {
-          errorMessage = 'No se pudo conectar con el servidor de n8n. Por favor, verifica que:\n\n' +
-            '• El flujo de n8n esté activo\n' +
-            '• La URL del webhook sea correcta\n' +
-            '• No haya problemas de red o CORS'
-        } else if (error.message.includes('flujo de n8n')) {
-          errorMessage = 'El flujo de n8n no está respondiendo correctamente. Verifica que esté activo y configurado.'
-        }
       }
-      
-      // Track error
       trackError('generacion_rutina', errorMessage)
-      
-      toast.error(errorMessage, {
-        duration: 6000,
-      })
+      toast.error(errorMessage, { duration: 6000 })
       setSubmitting(false)
     }
   }
