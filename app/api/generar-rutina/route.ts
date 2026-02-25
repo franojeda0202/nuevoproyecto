@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { trackErrorServer } from '@/lib/analytics-server'
 import { checkRateLimit, RATE_LIMIT } from '@/lib/rate-limit'
+import { GenerarRutinaRequest } from '@/lib/types/database'
+import { isValidUUID } from '@/lib/services/rutina-service'
 import OpenAI from 'openai'
 import { readFileSync } from 'fs'
 import { join } from 'path'
@@ -10,7 +12,7 @@ const GENERIC_ERROR_MESSAGE = 'No se pudo generar la rutina. Intenta de nuevo en
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-function buildUserPrompt(userId: string, config: Record<string, unknown>, ejercicios: unknown[]): string {
+function buildUserPrompt(userId: string, config: GenerarRutinaRequest['config'], ejercicios: unknown[]): string {
   return `Actúa como GymLogic AI. Diseña una rutina de alta optimización biomecánica.
 
 DATOS DEL USUARIO:
@@ -52,6 +54,12 @@ export async function POST(request: NextRequest) {
 
     userId = session.user.id
 
+    // Validar que config exista y tenga la forma esperada
+    const config = body?.config as GenerarRutinaRequest['config'] | undefined
+    if (!config || typeof config !== 'object' || typeof config.frecuencia !== 'number') {
+      return NextResponse.json({ error: 'Configuración de rutina inválida' }, { status: 400 })
+    }
+
     // Rate limit
     const { limit, windowMs } = RATE_LIMIT.GENERAR_RUTINA
     const rate = checkRateLimit(`generar-rutina:${userId}`, limit, windowMs)
@@ -80,7 +88,6 @@ export async function POST(request: NextRequest) {
     )
 
     // 3. Llamar a OpenAI
-    const config = body.config as Record<string, unknown>
     const completion = await openai.chat.completions.create({
       model: 'gpt-4.1-mini',
       response_format: { type: 'json_object' },
@@ -119,13 +126,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
     }
 
+    // Validar estructura mínima del output de OpenAI
+    if (!rutinaGenerada.nombre_rutina || !Array.isArray(rutinaGenerada.dias)) {
+      console.error('[generar-rutina] OpenAI respuesta con estructura inválida')
+      trackErrorServer(userId, 'api/generar-rutina', 'OpenAI estructura inválida')
+      return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
+    }
+
     // 4. INSERT rutina
     const { data: rutina, error: rutinaError } = await supabase
       .from('rutinas')
       .insert({
         nombre: rutinaGenerada.nombre_rutina,
         user_id: userId,
-        frecuencia: config.frecuencia as number,
+        frecuencia: config.frecuencia,
       })
       .select('id')
       .single()
@@ -134,6 +148,11 @@ export async function POST(request: NextRequest) {
       console.error('[generar-rutina] Error creando rutina:', rutinaError)
       trackErrorServer(userId, 'api/generar-rutina', 'Error creando rutina en Supabase')
       return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
+    }
+
+    // Helper para eliminar la rutina huérfana si algo falla después de insertarla
+    async function limpiarRutinaHuerfana() {
+      await supabase.from('rutinas').delete().eq('id', rutina!.id)
     }
 
     // 5. INSERT rutina_dias y rutina_ejercicios secuencialmente
@@ -150,11 +169,26 @@ export async function POST(request: NextRequest) {
 
       if (diaError || !rutinaDia) {
         console.error('[generar-rutina] Error creando día:', diaError)
-        trackErrorServer(userId, 'api/generar-rutina', 'Error creando día en Supabase')
+        trackErrorServer(userId!, 'api/generar-rutina', 'Error creando día en Supabase')
+        await limpiarRutinaHuerfana()
         return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
       }
 
-      const ejerciciosDelDia = dia.ejercicios.map((ej, index) => ({
+      // Filtrar ejercicios con ejercicio_id inválido
+      const ejerciciosValidos = dia.ejercicios.filter((ej) => {
+        if (!isValidUUID(ej.ejercicio_id)) {
+          console.warn(`[generar-rutina] ejercicio_id inválido descartado: "${ej.ejercicio_id}" en día "${dia.nombre_dia}"`)
+          return false
+        }
+        return true
+      })
+
+      if (ejerciciosValidos.length === 0) {
+        console.warn(`[generar-rutina] Día "${dia.nombre_dia}" quedó sin ejercicios válidos; se omite la inserción. El usuario puede agregar ejercicios manualmente.`)
+        continue
+      }
+
+      const ejerciciosDelDia = ejerciciosValidos.map((ej, index) => ({
         dia_id: rutinaDia.id,
         ejercicio_id: ej.ejercicio_id,
         series: ej.series,
@@ -169,7 +203,8 @@ export async function POST(request: NextRequest) {
 
       if (ejerciciosInsertError) {
         console.error('[generar-rutina] Error creando ejercicios:', ejerciciosInsertError)
-        trackErrorServer(userId, 'api/generar-rutina', 'Error creando ejercicios en Supabase')
+        trackErrorServer(userId!, 'api/generar-rutina', 'Error creando ejercicios en Supabase')
+        await limpiarRutinaHuerfana()
         return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
       }
     }
