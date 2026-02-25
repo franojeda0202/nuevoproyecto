@@ -27,10 +27,17 @@ export async function POST(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession()
     userId = session?.user?.id || null
 
-    // Rate limit por usuario (o por IP si no hay sesión, usando un fallback)
-    const rateKey = userId ? `chat:${userId}` : `chat:anon:${request.headers.get('x-forwarded-for') || 'unknown'}`
+    // Requerir autenticación (ChatBubble no se muestra a usuarios no autenticados)
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Debes iniciar sesión para usar el chat' },
+        { status: 401 }
+      )
+    }
+
+    // Rate limit por usuario autenticado
     const { limit, windowMs } = RATE_LIMIT.CHAT
-    const rate = checkRateLimit(rateKey, limit, windowMs)
+    const rate = checkRateLimit(`chat:${userId}`, limit, windowMs)
     if (!rate.allowed) {
       return NextResponse.json(
         { error: 'Has enviado muchos mensajes. Espera un minuto antes de continuar.' },
