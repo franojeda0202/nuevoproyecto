@@ -26,10 +26,15 @@ const validatePassword = (password: string): { valid: boolean; message: string }
 const translateError = (error: any): string => {
   const errorMessage = error.message || ''
   const errorStatus = error.status || ''
-  
-  // Email no confirmado - ignoramos este error y permitimos el login
+
+  // DECISIÓN DE PRODUCTO (intencional): no requerimos confirmación de email.
+  // Razón: reducir fricción en el onboarding; el usuario puede usar la app
+  // inmediatamente sin esperar un email de confirmación.
+  // Implicación conocida: permite registrar un email ajeno sin verificar ownership.
+  // Para revertir: activar "Enable email confirmations" en Supabase Dashboard
+  // (Authentication > Email) y eliminar el bypass de este bloque.
   if (
-    errorMessage.includes('Email not confirmed') || 
+    errorMessage.includes('Email not confirmed') ||
     errorMessage.includes('email not confirmed') ||
     errorMessage.includes('Email address not confirmed') ||
     errorStatus === 400 && errorMessage.includes('confirm')
