@@ -128,7 +128,7 @@ export function HomeSkeleton() {
   )
 }
 
-// Skeleton para generar rutina (waiting for n8n)
+// Skeleton para generar rutina
 export function GenerandoRutinaSkeleton() {
   const [currentStep, setCurrentStep] = useState(0)
   const steps = ['Analizando perfil', 'Seleccionando ejercicios', 'Optimizando rutina']

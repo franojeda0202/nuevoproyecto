@@ -81,7 +81,7 @@ export default function Home() {
 
       const userId = session.user.id
 
-      // 2. Llamada a n8n a través de nuestra API route (evita problemas de CORS)
+      // 2. Llamar a la API de generación de rutinas
       const requestBody = {
         user_id: userId,
         config: {
@@ -94,7 +94,6 @@ export default function Home() {
 
       let response
       try {
-        // Usar nuestra API route en lugar de llamar directamente a n8n
         response = await fetch('/api/generar-rutina', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -154,7 +153,7 @@ export default function Home() {
     return <LoginForm onSuccess={handleLoginSuccess} />
   }
 
-  // Mostrar loading al generar rutina (esperando respuesta de n8n)
+  // Mostrar loading al generar rutina
   if (submitting) {
     return <GenerandoRutinaSkeleton />
   }
