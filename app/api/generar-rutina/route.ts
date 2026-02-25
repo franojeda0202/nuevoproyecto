@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { trackErrorServer } from '@/lib/analytics-server'
-import { checkRateLimit, RATE_LIMIT } from '@/lib/rate-limit'
 import { GenerarRutinaRequest } from '@/lib/types/database'
 import { isValidUUID } from '@/lib/services/rutina-service'
 import OpenAI from 'openai'
@@ -79,10 +78,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Configuración de rutina inválida' }, { status: 400 })
     }
 
-    // Rate limit
-    const { limit, windowMs } = RATE_LIMIT.GENERAR_RUTINA
-    const rate = checkRateLimit(`generar-rutina:${userId}`, limit, windowMs)
-    if (!rate.allowed) {
+    // Rate limit basado en Supabase (funciona en serverless multi-instancia)
+    const unMinutoAtras = new Date(Date.now() - 60_000).toISOString()
+    const { count: rutinasRecientes, error: rateLimitError } = await supabase
+      .from('rutinas')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .gte('created_at', unMinutoAtras)
+
+    if (!rateLimitError && (rutinasRecientes ?? 0) >= 2) {
       return NextResponse.json(
         { error: 'Has alcanzado el límite de generación. Espera un minuto antes de intentar de nuevo.' },
         { status: 429 }

@@ -1,6 +1,10 @@
 /**
- * Rate limiter in-memory (simple, single-instance).
- * Para producción multi-instancia considerar Redis/Vercel KV.
+ * Rate limiter in-memory (best-effort, single-instance).
+ *
+ * IMPORTANTE: Este limiter NO es confiable en Vercel serverless (multi-instancia).
+ * - /api/generar-rutina: usa rate limit basado en Supabase (ver generar-rutina/route.ts)
+ * - /api/chat: usa este limiter como protección de UX best-effort.
+ *   Para rate limiting robusto en chat, migrar a Vercel KV o Upstash Redis.
  */
 
 type Entry = { count: number; resetAt: number }
