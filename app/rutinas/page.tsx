@@ -81,7 +81,6 @@ export default function RutinasPage() {
   // ==========================================
 
   const handleOpenEditModal = (ejercicio: EjercicioEditable) => {
-    const dia = rutinaData?.dias.find(d => d.id === ejercicio.dia_id)
     setModalState({
       isOpen: true,
       mode: 'edit',
