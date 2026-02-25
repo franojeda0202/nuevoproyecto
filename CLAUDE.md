@@ -17,7 +17,7 @@ There are no automated tests configured in this project.
 
 Copy `env.example` to `.env.local` and fill in the required values:
 
-- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` — Supabase project credentials
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase project credentials
 - `OPENAI_API_KEY` — OpenAI API key for chat (gpt-4o-mini) and routine generation (gpt-4.1-mini)
 
 ## Architecture
@@ -60,7 +60,19 @@ GymLogic is a Next.js 16 App Router app for generating and managing personalized
 
 ### Rate Limiting
 
-In-memory Map per user ID: 2 routine generations/minute, 30 chat messages/minute. Returns HTTP 429 when exceeded.
+- **Routine generation** (`/api/generar-rutina`): Supabase-based — counts rows in `rutinas` table with `created_at >= now - 1 min`. Limit: 2/minute per user. Works correctly in Vercel serverless multi-instance.
+- **Chat** (`/api/chat`): In-memory Map, best-effort only (not reliable across serverless instances). Limit: 30/minute per user. For production robustness, migrate to Vercel KV or Upstash Redis.
+
+### Row Level Security (RLS)
+
+The service layer (`rutina-service.ts`) relies entirely on Supabase RLS for authorization — it does **not** perform ownership checks at the application layer. Before deploying to production, verify that RLS is **enabled** in the Supabase Dashboard for these tables:
+
+- `rutinas` — SELECT/INSERT/UPDATE/DELETE scoped to `auth.uid() = user_id`
+- `rutina_dias` — ALL scoped via join: `rutina_id IN (SELECT id FROM rutinas WHERE user_id = auth.uid())`
+- `rutina_ejercicios` — ALL scoped via join through `rutina_dias`
+- `user_events` — INSERT only for authenticated user's own rows
+
+If RLS is misconfigured or disabled, any authenticated user could read or modify another user's data.
 
 ### Analytics
 
