@@ -9,7 +9,10 @@ import { join } from 'path'
 
 const GENERIC_ERROR_MESSAGE = 'No se pudo generar la rutina. Intenta de nuevo en unos minutos.'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: 50_000, // 50s — rutina compleja requiere más tiempo que el chat
+})
 
 const VALORES_VALIDOS = {
   genero: ['male', 'female', 'other'] as const,

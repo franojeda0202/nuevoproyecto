@@ -8,7 +8,10 @@ import { trackEventServer, trackErrorServer } from '@/lib/analytics-server'
 import { checkRateLimit, RATE_LIMIT } from '@/lib/rate-limit'
 
 // Cliente OpenAI a nivel de módulo (una sola instancia, consistente con generar-rutina/route.ts)
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+  timeout: 25_000, // 25s — por debajo del límite de Vercel Hobby (10s) y Pro (60s)
+})
 
 const MODEL = 'gpt-4o-mini'
 const GENERIC_CHAT_ERROR = 'No se pudo procesar tu mensaje. Intenta de nuevo en unos momentos.'
