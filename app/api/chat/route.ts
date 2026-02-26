@@ -48,8 +48,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
+    if (!process.env.OPENAI_API_KEY) {
       console.error('[chat] OPENAI_API_KEY no configurada')
       if (userId) trackErrorServer(userId, 'api/chat', 'OPENAI_API_KEY missing')
       return NextResponse.json(
