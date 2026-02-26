@@ -23,9 +23,9 @@ const validatePassword = (password: string): { valid: boolean; message: string }
 }
 
 // Función para traducir errores de Supabase
-const translateError = (error: any): string => {
-  const errorMessage = error.message || ''
-  const errorStatus = error.status || ''
+const translateError = (error: unknown): string => {
+  const errorMessage = (error as { message?: string })?.message || ''
+  const errorStatus = (error as { status?: number | string })?.status || ''
 
   // DECISIÓN DE PRODUCTO (intencional): no requerimos confirmación de email.
   // Razón: reducir fricción en el onboarding; el usuario puede usar la app
@@ -200,7 +200,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
         onSuccess()
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       const translatedError = translateError(err)
       setError(translatedError)
     } finally {
