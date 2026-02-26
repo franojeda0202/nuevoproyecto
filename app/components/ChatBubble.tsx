@@ -155,7 +155,7 @@ export default function ChatBubble() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-black text-white rounded-full shadow-2xl hover:bg-gray-800 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95"
+          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-700 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95"
           aria-label="Abrir chat"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +170,7 @@ export default function ChatBubble() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-bold">GL</span>
               </div>
               <div>
@@ -213,7 +213,7 @@ export default function ChatBubble() {
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         message.role === 'user'
-                          ? 'bg-black text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-white text-gray-900 border border-gray-200'
                       }`}
                     >
@@ -276,7 +276,7 @@ export default function ChatBubble() {
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isLoading || messages.length >= MAX_MESSAGES}
-                className="px-4 py-3 bg-black text-white rounded-xl font-semibold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 aria-label="Enviar mensaje"
               >
                 {isLoading ? (
