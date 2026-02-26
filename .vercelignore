@@ -1,0 +1,7 @@
+# Herramientas de desarrollo — no deployar
+process_knowledge.py
+requirements.txt
+supabase_match_function.sql
+PROCESS_KNOWLEDGE_README.md
+conocimiento_agente/
+docs/
