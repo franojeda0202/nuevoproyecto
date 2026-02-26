@@ -161,8 +161,8 @@ export default function EjercicioModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-[fadeIn_0.15s_ease-out]">
+      <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 relative animate-[scaleIn_0.15s_ease-out]">
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-500" />
         <div className="px-6 py-4 border-b border-slate-200 flex-shrink-0">
           <div className="flex justify-between items-start">
