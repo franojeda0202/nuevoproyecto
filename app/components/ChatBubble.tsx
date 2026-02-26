@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown'
 import { useAuth } from '@/lib/hooks'
 
 const MAX_MESSAGES = 10
+const MAX_CONTENT_LENGTH = 500
 const STORAGE_KEY = 'gymlogic_chat_history'
 
 export default function ChatBubble() {
@@ -69,6 +70,11 @@ export default function ChatBubble() {
 
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return
+
+    if (inputValue.trim().length > MAX_CONTENT_LENGTH) {
+      toast.error(`El mensaje no puede superar los ${MAX_CONTENT_LENGTH} caracteres`)
+      return
+    }
 
     // Verificar límite de mensajes
     if (messages.length >= MAX_MESSAGES) {
@@ -264,6 +270,7 @@ export default function ChatBubble() {
                 onKeyDown={handleKeyDown}
                 placeholder="Escribe tu pregunta..."
                 disabled={isLoading || messages.length >= MAX_MESSAGES}
+                maxLength={MAX_CONTENT_LENGTH}
                 className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
