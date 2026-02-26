@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import Link from 'next/link'
 
 interface ErrorProps {
   error: Error & { digest?: string }
@@ -59,12 +60,12 @@ export default function RutinasError({ error, reset }: ErrorProps) {
             </svg>
             Reintentar
           </button>
-          <a
+          <Link
             href="/"
             className="flex-1 px-5 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all text-center"
           >
             Volver al inicio
-          </a>
+          </Link>
         </div>
 
         {/* Info adicional */}
