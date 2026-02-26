@@ -490,8 +490,8 @@ export default function RutinasPage() {
         />
 
         {showConfirmModal && (
-          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 animate-[fadeIn_0.15s_ease-out]">
-            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-md w-full p-6 border border-slate-200 animate-[scaleIn_0.15s_ease-out]">
+          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 animate-[fadeIn_0.15s_ease-out_both]">
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-md w-full p-6 border border-slate-200 animate-[scaleIn_0.15s_ease-out_both]">
               <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">
                 ¿Generar nueva rutina?
               </h3>
@@ -521,8 +521,8 @@ export default function RutinasPage() {
 
         {/* Modal de confirmación de eliminación */}
         {deleteConfirm.isOpen && deleteConfirm.ejercicio && (
-          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 animate-[fadeIn_0.15s_ease-out]">
-            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-sm w-full p-6 border border-slate-200 animate-[scaleIn_0.15s_ease-out]">
+          <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 animate-[fadeIn_0.15s_ease-out_both]">
+            <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-sm w-full p-6 border border-slate-200 animate-[scaleIn_0.15s_ease-out_both]">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
