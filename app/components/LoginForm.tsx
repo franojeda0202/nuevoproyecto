@@ -213,7 +213,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-1">
-            <svg className="w-10 h-10 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-10 h-10 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
             </svg>
             <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
