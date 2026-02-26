@@ -16,6 +16,7 @@ export default function ChatBubble() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -142,11 +143,10 @@ export default function ChatBubble() {
   }
 
   const handleClearHistory = () => {
-    if (confirm('¿Estás seguro que deseas limpiar el historial de chat?')) {
-      setMessages([])
-      localStorage.removeItem(STORAGE_KEY)
-      toast.success('Historial limpiado')
-    }
+    setMessages([])
+    localStorage.removeItem(STORAGE_KEY)
+    setShowClearConfirm(false)
+    toast.success('Historial limpiado')
   }
 
   return (
@@ -291,15 +291,32 @@ export default function ChatBubble() {
 
             {/* Botón limpiar historial */}
             {messages.length > 0 && (
-              <button
-                onClick={handleClearHistory}
-                className="mt-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Limpiar historial
-              </button>
+              showClearConfirm ? (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => setShowClearConfirm(false)}
+                    className="flex-1 px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleClearHistory}
+                    className="flex-1 px-3 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="mt-2 w-full px-3 py-2 text-sm text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Limpiar historial
+                </button>
+              )
             )}
           </div>
         </div>
