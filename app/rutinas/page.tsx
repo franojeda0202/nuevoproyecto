@@ -360,8 +360,10 @@ export default function RutinasPage() {
         {!rutinaData ? (
           <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-12 text-center border border-slate-200/80 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-blue-400" />
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-blue-50 flex items-center justify-center text-4xl">
-              📋
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-blue-50 flex items-center justify-center">
+              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2 tracking-tight">Aún no tienes rutinas</h2>
             <p className="text-slate-600 mb-8 max-w-sm mx-auto">
@@ -369,9 +371,12 @@ export default function RutinasPage() {
             </p>
             <button
               onClick={handleGenerateNew}
-              className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25"
+              className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25 flex items-center gap-2"
             >
-              Generar mi primera rutina 🚀
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Generar mi primera rutina
             </button>
           </div>
         ) : (
@@ -383,8 +388,22 @@ export default function RutinasPage() {
                   <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1 tracking-tight">
                     {rutinaData.rutina.nombre || 'Mi Rutina'}
                   </h2>
-                  <p className="text-sm text-slate-500">
-                    Haz clic en ✏️ para editar o 🗑️ para eliminar ejercicios
+                  <p className="text-sm text-slate-400 flex items-center gap-1.5 flex-wrap">
+                    Clic en
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      editar
+                    </span>
+                    o
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      eliminar
+                    </span>
+                    ejercicios
                   </p>
                 </div>
               </div>
