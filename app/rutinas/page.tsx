@@ -464,7 +464,6 @@ export default function RutinasPage() {
           isOpen={modalState.isOpen}
           mode={modalState.mode}
           ejercicio={modalState.ejercicio}
-          diaId={modalState.diaId || ''}
           diaNombre={getDiaNombre()}
           onSave={handleSaveEjercicio}
           onDelete={modalState.mode === 'edit' ? handleDeleteEjercicio : undefined}

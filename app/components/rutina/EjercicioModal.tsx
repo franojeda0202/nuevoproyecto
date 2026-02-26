@@ -8,7 +8,6 @@ interface EjercicioModalProps {
   isOpen: boolean
   mode: 'edit' | 'add'
   ejercicio: EjercicioEditable | null  // null cuando es modo 'add'
-  diaId: string
   diaNombre: string
   onSave: (datos: {
     ejercicio_id: string
@@ -24,7 +23,6 @@ export default function EjercicioModal({
   isOpen,
   mode,
   ejercicio,
-  diaId,
   diaNombre,
   onSave,
   onDelete,
