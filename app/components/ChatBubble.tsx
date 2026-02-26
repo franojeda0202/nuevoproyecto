@@ -198,8 +198,8 @@ export default function ChatBubble() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
                   </svg>
                 </div>
-                <p className="text-slate-700 font-semibold text-base">Hola, soy GymLogic AI</p>
-                <p className="text-sm text-slate-400 mt-1 mb-5 text-center">Tu entrenador personal disponible 24/7</p>
+                <p className="text-gray-800 font-semibold text-base">Hola, soy GymLogic AI</p>
+                <p className="text-sm text-gray-400 mt-1 mb-5 text-center">Tu entrenador personal disponible 24/7</p>
                 <div className="w-full space-y-2">
                   {[
                     '¿Qué ejercicios son mejores para la espalda?',
@@ -208,7 +208,7 @@ export default function ChatBubble() {
                   ].map((sugerencia) => (
                     <button
                       key={sugerencia}
-                      onClick={() => setInputValue(sugerencia)}
+                      onClick={() => { setInputValue(sugerencia); inputRef.current?.focus() }}
                       className="w-full text-left px-3 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150"
                     >
                       {sugerencia}
