@@ -239,7 +239,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               }}
               className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
                 mode === 'login'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-900/20'
                   : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
@@ -255,7 +255,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               }}
               className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
                 mode === 'signup'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-md'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-900/20'
                   : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
@@ -319,7 +319,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           <button
             type="submit"
             disabled={loading || (mode === 'signup' && !!passwordError)}
-            className="w-full py-4 h-12 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all duration-200 active:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-slate-900/20"
+            className="w-full py-4 h-12 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/25"
           >
             {loading ? 'Cargando...' : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </button>
