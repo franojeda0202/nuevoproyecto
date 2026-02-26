@@ -212,11 +212,15 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     <div className="min-h-screen app-page-bg flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="text-center mb-10">
-          <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
-            GymLogic
-          </h1>
-          <div className="h-1 w-16 bg-blue-600 mx-auto mt-3 rounded-full" />
-          <p className="text-slate-600 text-lg font-medium mt-3 text-slate-600">
+          <div className="flex items-center justify-center gap-3 mb-1">
+            <svg className="w-10 h-10 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
+            </svg>
+            <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tight">
+              GymLogic
+            </h1>
+          </div>
+          <p className="text-slate-500 text-base font-medium mt-3">
             Tu coach digital personal
           </p>
         </div>
