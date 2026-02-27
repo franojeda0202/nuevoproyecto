@@ -278,7 +278,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
                 {formData.location === 'gym' ? 'Gimnasio' : 'En casa'}
               </span>
               {formData.muscleFocus && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
                   Foco: {MUSCLE_FOCUS_OPTIONS.find(o => o.value === formData.muscleFocus)?.label}
                 </span>
               )}
