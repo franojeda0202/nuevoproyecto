@@ -333,7 +333,7 @@ export default function RutinasPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight mb-1">
+            <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
               Mi Rutina Activa
             </h1>
             <div className="h-0.5 w-12 bg-blue-600 rounded-full mb-2" />
@@ -385,7 +385,7 @@ export default function RutinasPage() {
             <div className="p-6 border-b border-slate-200 bg-slate-50/30">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1 tracking-tight">
+                  <h2 className="text-3xl md:text-4xl font-display text-slate-900 tracking-wider uppercase leading-none mb-1">
                     {rutinaData.rutina.nombre || 'Mi Rutina'}
                   </h2>
                   <p className="text-sm text-slate-400 flex items-center gap-1.5 flex-wrap">
