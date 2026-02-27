@@ -229,7 +229,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           onSubmit={handleSubmit}
           className="w-full bg-white rounded-2xl p-8 md:p-10 space-y-6 border border-slate-200/80 shadow-xl shadow-slate-900/10 relative overflow-hidden"
         >
-          {/* Barra de acento azul */}
+          {/* Barra de acento */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400" />
           {/* Tabs Login/Registro */}
           <div className="flex gap-2 mb-6">
