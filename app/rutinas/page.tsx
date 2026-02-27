@@ -336,7 +336,7 @@ export default function RutinasPage() {
             <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
               Mi Rutina Activa
             </h1>
-            <div className="h-0.5 w-12 bg-blue-600 rounded-full mb-2" />
+            <div className="h-0.5 w-12 bg-yellow-500 rounded-full mb-2" />
             <p className="text-slate-600 font-medium text-sm">
               {user?.email}
             </p>
@@ -344,7 +344,7 @@ export default function RutinasPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleGenerateNew}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25"
+              className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
             >
               Nueva Rutina
             </button>
@@ -359,9 +359,9 @@ export default function RutinasPage() {
 
         {!rutinaData ? (
           <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-12 text-center border border-slate-200/80 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-blue-400" />
-            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-blue-50 flex items-center justify-center">
-              <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-yellow-500 to-amber-400" />
+            <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-yellow-50 flex items-center justify-center">
+              <svg className="w-10 h-10 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
             </div>
@@ -371,7 +371,7 @@ export default function RutinasPage() {
             </p>
             <button
               onClick={handleGenerateNew}
-              className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25 flex items-center gap-2"
+              className="px-8 py-4 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10 flex items-center gap-2"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -381,7 +381,7 @@ export default function RutinasPage() {
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/80 overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-blue-600 to-blue-400" />
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-yellow-500 to-amber-400" />
             <div className="p-6 border-b border-slate-200 bg-slate-50/30">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
@@ -414,7 +414,7 @@ export default function RutinasPage() {
               {rutinaData.dias.map((dia) => (
                 <div key={dia.id} className="space-y-4">
                   <div className="pb-2 border-b border-slate-200 flex items-center gap-2">
-                    <span className="w-1.5 h-6 bg-blue-600 rounded-full" />
+                    <span className="w-1.5 h-6 bg-yellow-500 rounded-full" />
                     <h3 className="text-xl font-bold text-slate-900 tracking-tight">
                       {dia.nombre_dia}
                     </h3>
@@ -465,7 +465,7 @@ export default function RutinasPage() {
 
                   <button
                     onClick={() => handleOpenAddModal(dia.id)}
-                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold text-slate-500 hover:text-blue-600 hover:bg-blue-50/80 border border-dashed border-slate-200 hover:border-blue-300 rounded-xl transition-all duration-200"
+                    className="w-full flex items-center justify-center gap-2 py-3 text-sm font-semibold text-slate-500 hover:text-yellow-600 hover:bg-yellow-50/80 border border-dashed border-slate-200 hover:border-yellow-300 rounded-xl transition-all duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -510,7 +510,7 @@ export default function RutinasPage() {
                 </button>
                 <button
                   onClick={handleConfirmNewRoutine}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25"
+                  className="flex-1 px-4 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
                 >
                   Confirmar
                 </button>
