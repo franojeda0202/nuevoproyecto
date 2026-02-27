@@ -121,7 +121,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
       <div className="w-full max-w-2xl">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-1">
-            <svg className="w-10 h-10 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg className="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
             </svg>
             <h1 className="text-6xl md:text-7xl font-display text-slate-900 tracking-widest uppercase leading-none">
@@ -134,7 +134,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-8 md:p-10 space-y-8 border border-slate-200/80 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400" />
           {/* Días por semana */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
@@ -144,7 +144,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
               value={formData.daysPerWeek}
               onChange={(e) => handleFieldChange('daysPerWeek', parseInt(e.target.value))}
               onBlur={() => handleFieldBlur('daysPerWeek')}
-              className={getFieldClasses('daysPerWeek', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none cursor-pointer')}
+              className={getFieldClasses('daysPerWeek', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none cursor-pointer')}
               required
             >
               <option value={2}>2 días</option>
@@ -172,7 +172,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
               value={formData.gender}
               onChange={(e) => handleFieldChange('gender', e.target.value as 'male' | 'female' | 'other')}
               onBlur={() => handleFieldBlur('gender')}
-              className={getFieldClasses('gender', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none cursor-pointer')}
+              className={getFieldClasses('gender', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none cursor-pointer')}
               required
             >
               <option value="male">Masculino</option>
@@ -213,7 +213,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
               </label>
               <label className={`relative flex items-center justify-center p-4 border rounded-xl cursor-pointer transition-all ${
                 formData.location === 'gym' 
-                  ? 'border-blue-600 bg-blue-50 text-slate-900' 
+                  ? 'border-yellow-500 bg-yellow-50 text-slate-900'
                   : touched.location && errors.location
                     ? 'border-red-500 bg-white text-slate-700'
                     : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
@@ -229,7 +229,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
                 />
                 <span className="font-semibold">Gimnasio</span>
                 {formData.location === 'gym' && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-blue-600 rounded-full" />
+                  <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-500 rounded-full" />
                 )}
               </label>
             </div>
@@ -251,7 +251,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
             <select
               value={formData.muscleFocus || ''}
               onChange={(e) => handleFieldChange('muscleFocus', e.target.value || undefined)}
-              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none cursor-pointer"
+              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none cursor-pointer"
             >
               {MUSCLE_FOCUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -268,7 +268,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
           <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200">
             <p className="text-sm font-medium text-gray-700 mb-2">Tu configuración:</p>
             <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-700">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
                 {formData.daysPerWeek} días/semana
               </span>
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
@@ -287,7 +287,7 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
 
           <button
             type="submit"
-            className="w-full py-4 h-12 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 shadow-lg shadow-blue-900/25 flex items-center justify-center gap-2"
+            className="w-full py-4 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10 flex items-center justify-center gap-2"
           >
             <span>Generar mi rutina</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
