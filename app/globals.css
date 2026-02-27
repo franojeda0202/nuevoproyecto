@@ -3,8 +3,9 @@
 :root {
   --background: #f1f5f9;
   --foreground: #0f172a;
-  --accent: #2563eb;
-  --accent-light: #3b82f6;
+  --accent: #eab308;
+  --accent-light: #fbbf24;
+  --accent-dark: #171717;
   --card-border: #e2e8f0;
 }
 
