@@ -155,7 +155,7 @@ export default function ChatBubble() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl shadow-blue-900/30 hover:bg-blue-700 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95"
+          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-neutral-900 text-white rounded-full shadow-2xl shadow-neutral-900/30 hover:bg-neutral-800 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95"
           aria-label="Abrir chat"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,7 +170,7 @@ export default function ChatBubble() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 bg-neutral-900 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-bold">GL</span>
               </div>
               <div>
@@ -193,8 +193,8 @@ export default function ChatBubble() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full px-2">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <div className="w-14 h-14 bg-yellow-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-7 h-7 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
                   </svg>
                 </div>
@@ -209,7 +209,7 @@ export default function ChatBubble() {
                     <button
                       key={sugerencia}
                       onClick={() => { setInputValue(sugerencia); inputRef.current?.focus() }}
-                      className="w-full text-left px-3 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 transition-all duration-150"
+                      className="w-full text-left px-3 py-2.5 text-sm text-slate-600 bg-white border border-slate-200 rounded-xl hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-700 transition-all duration-150"
                     >
                       {sugerencia}
                     </button>
@@ -226,7 +226,7 @@ export default function ChatBubble() {
                     <div
                       className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         message.role === 'user'
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-neutral-900 text-white'
                           : 'bg-white text-gray-900 border border-gray-200'
                       }`}
                     >
@@ -284,12 +284,12 @@ export default function ChatBubble() {
                 placeholder="Escribe tu pregunta..."
                 disabled={isLoading || messages.length >= MAX_MESSAGES}
                 maxLength={MAX_CONTENT_LENGTH}
-                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isLoading || messages.length >= MAX_MESSAGES}
-                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                className="px-4 py-3 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 aria-label="Enviar mensaje"
               >
                 {isLoading ? (
