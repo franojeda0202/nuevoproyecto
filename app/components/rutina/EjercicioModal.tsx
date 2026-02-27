@@ -163,7 +163,7 @@ export default function EjercicioModal({
   return (
     <div className="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 animate-[fadeIn_0.15s_ease-out_both]">
       <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/20 max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col border border-slate-200 relative animate-[scaleIn_0.15s_ease-out_both]">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400" />
         <div className="px-6 py-4 border-b border-slate-200 flex-shrink-0">
           <div className="flex justify-between items-start">
             <div>
@@ -201,7 +201,7 @@ export default function EjercicioModal({
                   <div>
                     <p className="font-semibold text-gray-900">{ejercicioSeleccionado.nombre}</p>
                     <div className="flex gap-2 mt-2">
-                      <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                      <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full">
                         {ejercicioSeleccionado.segmento}
                       </span>
                       <span className="text-xs px-2 py-1 bg-slate-100 text-slate-700 rounded-full">
@@ -214,7 +214,7 @@ export default function EjercicioModal({
                   </div>
                   <button
                     onClick={() => setMostrarAlternativas(true)}
-                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    className="text-sm text-yellow-600 hover:text-yellow-800 font-medium"
                   >
                     Cambiar
                   </button>
@@ -230,7 +230,7 @@ export default function EjercicioModal({
                     value={busqueda}
                     onChange={(e) => setBusqueda(e.target.value)}
                     placeholder="Buscar ejercicio..."
-                    className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                    className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
                   />
                   <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -247,7 +247,7 @@ export default function EjercicioModal({
                 {/* Lista de alternativas */}
                 {loadingPool ? (
                   <div className="py-8 text-center text-gray-500">
-                    <div className="animate-spin h-6 w-6 border-2 border-slate-200 border-t-blue-500 rounded-full mx-auto mb-2" />
+                    <div className="animate-spin h-6 w-6 border-2 border-slate-200 border-t-yellow-400 rounded-full mx-auto mb-2" />
                     Cargando ejercicios...
                   </div>
                 ) : alternativas.length > 0 ? (
@@ -256,8 +256,8 @@ export default function EjercicioModal({
                       <button
                         key={ej.id}
                         onClick={() => handleSelectEjercicio(ej)}
-                        className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors ${
-                          ej.id === ejercicioId ? 'bg-blue-50' : ''
+                        className={`w-full px-4 py-3 text-left hover:bg-yellow-50 transition-colors ${
+                          ej.id === ejercicioId ? 'bg-yellow-50' : ''
                         }`}
                       >
                         <p className="font-medium text-gray-900">{ej.nombre}</p>
@@ -306,7 +306,7 @@ export default function EjercicioModal({
               max={20}
               value={series}
               onChange={(e) => setSeries(parseInt(e.target.value) || 1)}
-              className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
             />
           </div>
 
@@ -320,7 +320,7 @@ export default function EjercicioModal({
               value={repeticiones}
               onChange={(e) => setRepeticiones(e.target.value)}
               placeholder="Ej: 10-12, 8, 15"
-              className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
             />
             <p className="text-xs text-gray-500 mt-1">
               Puedes usar rangos (8-12) o valores fijos (10)
@@ -337,7 +337,7 @@ export default function EjercicioModal({
               onChange={(e) => setNotasCoach(e.target.value)}
               placeholder="Indicaciones técnicas, tempo, etc."
               rows={2}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none resize-none min-h-[80px]"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none resize-none min-h-[80px]"
             />
           </div>
 
@@ -412,7 +412,7 @@ export default function EjercicioModal({
               <button
                 onClick={handleSave}
                 disabled={saving || !ejercicioId}
-                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-blue-900/25"
+                className="flex-1 px-4 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-neutral-900/10"
               >
                 {saving ? (
                   <>

@@ -177,7 +177,7 @@ export function GenerandoRutinaSkeleton() {
                 <div key={step} className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isCompleted ? 'bg-green-500 text-white' :
-                    isCurrent ? 'bg-blue-600 text-white' : 
+                    isCurrent ? 'bg-yellow-500 text-black' :
                     'bg-slate-100'
                   }`}>
                     {isCompleted ? (
