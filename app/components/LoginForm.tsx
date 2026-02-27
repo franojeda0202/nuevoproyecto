@@ -213,7 +213,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-1">
-            <svg className="w-10 h-10 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg className="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
             </svg>
             <h1 className="text-6xl md:text-7xl font-display text-slate-900 tracking-widest uppercase leading-none">
@@ -230,7 +230,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           className="w-full bg-white rounded-2xl p-8 md:p-10 space-y-6 border border-slate-200/80 shadow-xl shadow-slate-900/10 relative overflow-hidden"
         >
           {/* Barra de acento azul */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-500" />
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400" />
           {/* Tabs Login/Registro */}
           <div className="flex gap-2 mb-6">
             <button
@@ -243,7 +243,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               }}
               className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
                 mode === 'login'
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-900/20'
+                  ? 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-md'
                   : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
@@ -259,7 +259,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               }}
               className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
                 mode === 'signup'
-                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-900/20'
+                  ? 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-md'
                   : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
               }`}
             >
@@ -276,7 +276,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
               placeholder="tu@email.com"
               required
             />
@@ -296,7 +296,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
               type="password"
               value={password}
               onChange={handlePasswordChange}
-              className={`w-full px-4 py-3.5 h-12 border rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-[#0066FF] focus:border-[#0066FF] transition-all outline-none ${
+              className={`w-full px-4 py-3.5 h-12 border rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none ${
                 passwordError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-200'
               }`}
               placeholder="••••••••"
@@ -323,7 +323,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
           <button
             type="submit"
             disabled={loading || (mode === 'signup' && !!passwordError)}
-            className="w-full py-4 h-12 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition-all duration-200 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-900/25"
+            className="w-full py-4 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 active:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-900/10"
           >
             {loading ? 'Cargando...' : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </button>
