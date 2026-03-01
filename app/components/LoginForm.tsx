@@ -209,130 +209,174 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   return (
-    <div className="min-h-screen app-page-bg flex items-center justify-center p-4 md:p-6">
-      <div className="w-full max-w-md flex flex-col items-center">
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-3 mb-1">
-            <svg className="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <div className="min-h-screen flex">
+
+      {/* Panel izquierdo — imagen de gym (solo desktop) */}
+      <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
+        {/* Imagen de fondo */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/images/gym-bg.jpg')" }}
+        />
+        {/* Overlay oscuro para legibilidad */}
+        <div className="absolute inset-0 bg-neutral-900/65" />
+        {/* Contenido sobre el overlay */}
+        <div className="relative z-10 flex flex-col justify-end px-12 py-16">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-8">
+            <svg className="w-9 h-9 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
             </svg>
-            <h1 className="text-6xl md:text-7xl font-display text-slate-900 tracking-widest uppercase leading-none">
+            <span className="text-4xl font-display text-white tracking-widest uppercase leading-none">
               GymLogic
-            </h1>
+            </span>
           </div>
-          <p className="text-slate-500 text-base font-medium mt-3">
-            Tu coach digital personal
+          {/* Tagline */}
+          <p className="text-5xl font-display text-white tracking-wider uppercase leading-tight">
+            Tu rutina lista<br />en segundos.<br />Sin excusas.
+          </p>
+          {/* Línea decorativa */}
+          <div className="mt-6 h-1 w-16 bg-yellow-500 rounded-full" />
+        </div>
+      </div>
+
+      {/* Panel derecho — formulario */}
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 md:p-12 bg-white">
+        <div className="w-full max-w-md">
+
+          {/* Logo — solo mobile */}
+          <div className="flex flex-col items-center mb-10 md:hidden">
+            <div className="flex items-center justify-center gap-3 mb-1">
+              <svg className="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 4v16M18 4v16M3 8h3M18 8h3M3 16h3M18 16h3M6 12h12" />
+              </svg>
+              <h1 className="text-6xl font-display text-slate-900 tracking-widest uppercase leading-none">
+                GymLogic
+              </h1>
+            </div>
+            <p className="text-slate-500 text-base font-medium mt-3">
+              Tu coach digital personal
+            </p>
+          </div>
+
+          {/* Título del form — solo desktop */}
+          <div className="hidden md:block mb-8">
+            <h1 className="text-4xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+              Bienvenido
+            </h1>
+            <div className="h-0.5 w-10 bg-yellow-500 rounded-full" />
+          </div>
+
+          {/* Formulario */}
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
+            {/* Tabs Login/Registro */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login')
+                  setError(null)
+                  setMessage(null)
+                  setPasswordError(null)
+                }}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                  mode === 'login'
+                    ? 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-md'
+                    : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                Iniciar Sesión
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signup')
+                  setError(null)
+                  setMessage(null)
+                  setPasswordError(null)
+                }}
+                className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                  mode === 'signup'
+                    ? 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-md'
+                    : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                Registrarse
+              </button>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
+                placeholder="tu@email.com"
+                required
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                Contraseña
+                {mode === 'signup' && (
+                  <span className="text-gray-500 font-normal ml-2">
+                    (mín. 6 caracteres, 1 mayúscula, 1 número)
+                  </span>
+                )}
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={handlePasswordChange}
+                className={`w-full px-4 py-3.5 h-12 border rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none ${
+                  passwordError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-200'
+                }`}
+                placeholder="••••••••"
+                required
+                minLength={6}
+              />
+              {passwordError && (
+                <p className="mt-2 text-sm text-red-600 font-medium">{passwordError}</p>
+              )}
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium">
+                {message}
+              </div>
+            )}
+
+            {/* Submit — flex items-center justify-center para centrar texto verticalmente */}
+            <button
+              type="submit"
+              disabled={loading || (mode === 'signup' && !!passwordError)}
+              className="w-full h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 active:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-900/10 flex items-center justify-center"
+            >
+              {loading ? 'Cargando...' : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
+            </button>
+          </form>
+
+          <p className="text-center text-slate-400 text-sm mt-8">
+            Rutinas personalizadas con IA • Powered by GymLogic
           </p>
         </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="w-full bg-white rounded-2xl p-8 md:p-10 space-y-6 border border-slate-200/80 shadow-xl shadow-slate-900/10 relative overflow-hidden"
-        >
-          {/* Barra de acento */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400" />
-          {/* Tabs Login/Registro */}
-          <div className="flex gap-2 mb-6">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login')
-                setError(null)
-                setMessage(null)
-                setPasswordError(null)
-              }}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                mode === 'login'
-                  ? 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-md'
-                  : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-              }`}
-            >
-              Iniciar Sesión
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signup')
-                setError(null)
-                setMessage(null)
-                setPasswordError(null)
-              }}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-200 ${
-                mode === 'signup'
-                  ? 'bg-yellow-500 text-black hover:bg-yellow-400 shadow-md'
-                  : 'bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-              }`}
-            >
-              Registrarse
-            </button>
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
-              placeholder="tu@email.com"
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-800 mb-2">
-              Contraseña
-              {mode === 'signup' && (
-                <span className="text-gray-500 font-normal ml-2">
-                  (mín. 6 caracteres, 1 mayúscula, 1 número)
-                </span>
-              )}
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={handlePasswordChange}
-              className={`w-full px-4 py-3.5 h-12 border rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none ${
-                passwordError ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-200'
-              }`}
-              placeholder="••••••••"
-              required
-              minLength={6}
-            />
-            {passwordError && (
-              <p className="mt-2 text-sm text-red-600 font-medium">{passwordError}</p>
-            )}
-          </div>
-
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium">
-              {message}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || (mode === 'signup' && !!passwordError)}
-            className="w-full py-4 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 active:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-900/10"
-          >
-            {loading ? 'Cargando...' : mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
-          </button>
-        </form>
-
-        <p className="text-center text-slate-500 text-sm mt-6">
-          Rutinas personalizadas con IA • Powered by GymLogic
-        </p>
       </div>
+
     </div>
   )
 }
