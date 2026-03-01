@@ -212,7 +212,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
     <div className="min-h-screen flex">
 
       {/* Panel izquierdo — imagen de gym (solo desktop) */}
-      <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
+      <div className="hidden md:flex md:w-1/2 relative overflow-hidden bg-neutral-900">
         {/* Imagen de fondo */}
         <div
           className="absolute inset-0 bg-cover bg-center"
