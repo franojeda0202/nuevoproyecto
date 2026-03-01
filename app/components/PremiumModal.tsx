@@ -54,7 +54,7 @@ export default function PremiumModal({ isOpen, onClose }: PremiumModalProps) {
             </svg>
           </div>
 
-          <h3 id="premium-modal-title" className="text-xl font-bold text-slate-900 mb-2">Función Premium</h3>
+          <h3 id="premium-modal-title" className="text-xl font-bold text-slate-900 mb-2">Función no disponible</h3>
           <p className="text-slate-500 text-sm mb-6">
             Esta función estará disponible en la próxima versión de GymLogic.
           </p>
