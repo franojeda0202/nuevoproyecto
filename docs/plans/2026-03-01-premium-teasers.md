@@ -135,13 +135,17 @@ import { trackEvent } from '@/lib/analytics'
 
 Nota: `trackEvent` puede que ya esté importado. Verificar antes de agregarlo.
 
-**Step 3: Agregar estado para el modal**
+**Step 3: Agregar estado para el modal y ref de deduplicación**
 
 Dentro del componente (donde están los otros `useState`), agregar:
 
 ```tsx
 const [premiumModalOpen, setPremiumModalOpen] = useState(false)
+// Dedup: trackear cada feature solo una vez por sesión para no spamear user_events
+const trackedPremiumFeatures = useRef(new Set<string>())
 ```
+
+Nota: `useRef` ya está importado desde React en este archivo (lo usan otros componentes del proyecto). Verificar antes de agregarlo a los imports.
 
 **Step 4: Agregar los botones de export en el header del card de rutina**
 
@@ -191,7 +195,11 @@ Cambiar a (agregar el `<div>` con los botones como segundo hijo del flex):
   <div className="flex items-center gap-2 self-start md:self-center">
     <button
       onClick={() => {
-        trackEvent('premium_feature_click', { feature: 'csv_export' })
+        // Dedup: solo trackear la primera vez por sesión
+        if (!trackedPremiumFeatures.current.has('csv_export')) {
+          trackedPremiumFeatures.current.add('csv_export')
+          trackEvent('premium_feature_click', { feature: 'csv_export' })
+        }
         setPremiumModalOpen(true)
       }}
       className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 border border-slate-200 rounded-lg hover:border-yellow-300 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-150"
@@ -204,7 +212,11 @@ Cambiar a (agregar el `<div>` con los botones como segundo hijo del flex):
     </button>
     <button
       onClick={() => {
-        trackEvent('premium_feature_click', { feature: 'pdf_export' })
+        // Dedup: solo trackear la primera vez por sesión
+        if (!trackedPremiumFeatures.current.has('pdf_export')) {
+          trackedPremiumFeatures.current.add('pdf_export')
+          trackEvent('premium_feature_click', { feature: 'pdf_export' })
+        }
         setPremiumModalOpen(true)
       }}
       className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 border border-slate-200 rounded-lg hover:border-yellow-300 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-150"
