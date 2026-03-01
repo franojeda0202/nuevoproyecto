@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
@@ -16,6 +16,7 @@ import {
   obtenerSiguienteOrden 
 } from '@/lib/services/rutina-service'
 import { trackEvent, trackError } from '@/lib/analytics'
+import PremiumModal from '@/app/components/PremiumModal'
 
 interface RutinaData {
   rutina: { id: string; nombre: string }
@@ -41,7 +42,10 @@ export default function RutinasPage() {
     ejercicio: null,
     deleting: false
   })
-  
+  const [premiumModalOpen, setPremiumModalOpen] = useState(false)
+  // Dedup: trackear cada feature solo una vez por sesión para no spamear user_events
+  const trackedPremiumFeatures = useRef(new Set<string>())
+
   const router = useRouter()
   const supabase = createClient()
   const { loading: loadingAuth, authenticated, user, userId, logout } = useAuth()
@@ -406,6 +410,42 @@ export default function RutinasPage() {
                     ejercicios
                   </p>
                 </div>
+
+                {/* Botones de exportación (Premium) */}
+                <div className="flex items-center gap-2 self-start md:self-center">
+                  <button
+                    onClick={() => {
+                      if (!trackedPremiumFeatures.current.has('csv_export')) {
+                        trackedPremiumFeatures.current.add('csv_export')
+                        trackEvent('premium_feature_click', { feature: 'csv_export' })
+                      }
+                      setPremiumModalOpen(true)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 border border-slate-200 rounded-lg hover:border-yellow-300 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-150"
+                    title="Exportar como CSV (próximamente)"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!trackedPremiumFeatures.current.has('pdf_export')) {
+                        trackedPremiumFeatures.current.add('pdf_export')
+                        trackEvent('premium_feature_click', { feature: 'pdf_export' })
+                      }
+                      setPremiumModalOpen(true)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-500 border border-slate-200 rounded-lg hover:border-yellow-300 hover:text-yellow-600 hover:bg-yellow-50 transition-all duration-150"
+                    title="Exportar como PDF (próximamente)"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    PDF
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -568,6 +608,11 @@ export default function RutinasPage() {
           </div>
         )}
       </div>
+
+      <PremiumModal
+        isOpen={premiumModalOpen}
+        onClose={() => setPremiumModalOpen(false)}
+      />
     </div>
   )
 }
