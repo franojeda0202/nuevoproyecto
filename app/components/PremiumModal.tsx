@@ -26,6 +26,9 @@ export default function PremiumModal({ isOpen, onClose }: PremiumModalProps) {
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="premium-modal-title"
         className="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative overflow-hidden animate-[scaleIn_0.15s_ease-out_both]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -51,7 +54,7 @@ export default function PremiumModal({ isOpen, onClose }: PremiumModalProps) {
             </svg>
           </div>
 
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Función Premium</h3>
+          <h3 id="premium-modal-title" className="text-xl font-bold text-slate-900 mb-2">Función Premium</h3>
           <p className="text-slate-500 text-sm mb-6">
             Esta función estará disponible en la próxima versión de GymLogic.
           </p>
