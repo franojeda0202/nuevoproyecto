@@ -400,3 +400,27 @@ export async function obtenerSiguienteOrden(
     return 1
   }
 }
+
+/**
+ * Reordenar ejercicios de un día
+ * Actualiza el campo orden de cada ejercicio en paralelo
+ */
+export async function reordenarEjercicios(
+  supabase: SupabaseClient,
+  ejercicios: { id: string; orden: number }[]
+): Promise<ResultadoOperacion<null>> {
+  try {
+    await Promise.all(
+      ejercicios.map(({ id, orden }) =>
+        supabase
+          .from('rutina_ejercicios')
+          .update({ orden })
+          .eq('id', id)
+      )
+    )
+    return { success: true, data: null }
+  } catch (err) {
+    console.error('Error reordenando ejercicios:', err)
+    return { success: false, error: 'Error al guardar el orden' }
+  }
+}
