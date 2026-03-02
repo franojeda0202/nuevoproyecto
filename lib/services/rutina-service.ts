@@ -409,6 +409,10 @@ export async function reordenarEjercicios(
   supabase: SupabaseClient,
   ejercicios: { id: string; orden: number }[]
 ): Promise<ResultadoOperacion<null>> {
+  if (ejercicios.some(e => !isValidUUID(e.id))) {
+    return { success: false, error: 'IDs de ejercicios inválidos' }
+  }
+
   try {
     await Promise.all(
       ejercicios.map(({ id, orden }) =>

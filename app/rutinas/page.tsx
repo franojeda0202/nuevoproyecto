@@ -79,20 +79,24 @@ export default function RutinasPage() {
     const { active, over } = event
     if (!over || active.id === over.id || !rutinaData) return
 
+    const dia = rutinaData.dias.find(d => d.id === diaId)
+    if (!dia) return
+
+    const oldIndex = dia.ejercicios.findIndex(e => e.id === active.id)
+    const newIndex = dia.ejercicios.findIndex(e => e.id === over.id)
+    const reordenados = arrayMove(dia.ejercicios, oldIndex, newIndex)
+      .map((ej, idx) => ({ ...ej, orden: idx + 1 }))
+
+    // Fire-and-forget: guardar en DB sin bloquear la UI
+    reordenarEjercicios(supabase, reordenados.map(e => ({ id: e.id, orden: e.orden })))
+
     setRutinaData(prev => {
       if (!prev) return prev
       return {
         ...prev,
-        dias: prev.dias.map(dia => {
-          if (dia.id !== diaId) return dia
-          const oldIndex = dia.ejercicios.findIndex(e => e.id === active.id)
-          const newIndex = dia.ejercicios.findIndex(e => e.id === over.id)
-          const reordenados = arrayMove(dia.ejercicios, oldIndex, newIndex)
-            .map((ej, idx) => ({ ...ej, orden: idx + 1 }))
-          // Fire-and-forget: guardar en DB sin bloquear la UI
-          reordenarEjercicios(supabase, reordenados.map(e => ({ id: e.id, orden: e.orden })))
-          return { ...dia, ejercicios: reordenados }
-        }),
+        dias: prev.dias.map(d =>
+          d.id === diaId ? { ...d, ejercicios: reordenados } : d
+        ),
       }
     })
   }
