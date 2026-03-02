@@ -8,15 +8,31 @@ import { EjercicioEditable, DiaConEjerciciosEditables, ModalEjercicioState } fro
 import { useAuth } from '@/lib/hooks'
 import { RutinaSkeleton } from '@/app/components/Skeleton'
 import { EjercicioModal, EjercicioRow, EjercicioRowMobile } from '@/app/components/rutina'
-import { 
-  obtenerRutinaEditable, 
-  actualizarEjercicio, 
-  eliminarEjercicio, 
+import {
+  obtenerRutinaEditable,
+  actualizarEjercicio,
+  eliminarEjercicio,
   agregarEjercicio,
-  obtenerSiguienteOrden 
+  obtenerSiguienteOrden,
+  reordenarEjercicios,
 } from '@/lib/services/rutina-service'
 import { trackEvent, trackError } from '@/lib/analytics'
 import PremiumModal from '@/app/components/PremiumModal'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable'
 
 interface RutinaData {
   rutina: { id: string; nombre: string }
@@ -49,6 +65,37 @@ export default function RutinasPage() {
   const router = useRouter()
   const supabase = createClient()
   const { loading: loadingAuth, authenticated, user, userId, logout } = useAuth()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragEnd = (event: DragEndEvent, diaId: string) => {
+    const { active, over } = event
+    if (!over || active.id === over.id || !rutinaData) return
+
+    setRutinaData(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        dias: prev.dias.map(dia => {
+          if (dia.id !== diaId) return dia
+          const oldIndex = dia.ejercicios.findIndex(e => e.id === active.id)
+          const newIndex = dia.ejercicios.findIndex(e => e.id === over.id)
+          const reordenados = arrayMove(dia.ejercicios, oldIndex, newIndex)
+            .map((ej, idx) => ({ ...ej, orden: idx + 1 }))
+          // Fire-and-forget: guardar en DB sin bloquear la UI
+          reordenarEjercicios(supabase, reordenados.map(e => ({ id: e.id, orden: e.orden })))
+          return { ...dia, ejercicios: reordenados }
+        }),
+      }
+    })
+  }
 
   // Cargar rutina cuando el usuario está autenticado
   const loadRutina = useCallback(async () => {
@@ -470,6 +517,7 @@ export default function RutinasPage() {
                         <table className="w-full border-collapse">
                           <thead>
                             <tr className="bg-slate-100/80">
+                              <th className="py-3 pl-4 pr-2 w-10" />
                               <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider [font-variant:small-caps]">Ejercicio</th>
                               <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-20 [font-variant:small-caps]">Series</th>
                               <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-24 [font-variant:small-caps]">Reps</th>
@@ -478,27 +526,51 @@ export default function RutinasPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {dia.ejercicios.map((ejercicio) => (
-                              <EjercicioRow
-                                key={ejercicio.id}
-                                ejercicio={ejercicio}
-                                onEdit={handleOpenEditModal}
-                                onDelete={handleOpenDeleteConfirm}
-                              />
-                            ))}
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={(event) => handleDragEnd(event, dia.id)}
+                            >
+                              <SortableContext
+                                items={dia.ejercicios.map(e => e.id)}
+                                strategy={verticalListSortingStrategy}
+                              >
+                                {dia.ejercicios.map((ejercicio, index) => (
+                                  <EjercicioRow
+                                    key={ejercicio.id}
+                                    ejercicio={ejercicio}
+                                    index={index + 1}
+                                    onEdit={handleOpenEditModal}
+                                    onDelete={handleOpenDeleteConfirm}
+                                  />
+                                ))}
+                              </SortableContext>
+                            </DndContext>
                           </tbody>
                         </table>
                       </div>
 
                       <div className="md:hidden space-y-3">
-                        {dia.ejercicios.map((ejercicio) => (
-                          <EjercicioRowMobile
-                            key={ejercicio.id}
-                            ejercicio={ejercicio}
-                            onEdit={handleOpenEditModal}
-                            onDelete={handleOpenDeleteConfirm}
-                          />
-                        ))}
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => handleDragEnd(event, dia.id)}
+                        >
+                          <SortableContext
+                            items={dia.ejercicios.map(e => e.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {dia.ejercicios.map((ejercicio, index) => (
+                              <EjercicioRowMobile
+                                key={ejercicio.id}
+                                ejercicio={ejercicio}
+                                index={index + 1}
+                                onEdit={handleOpenEditModal}
+                                onDelete={handleOpenDeleteConfirm}
+                              />
+                            ))}
+                          </SortableContext>
+                        </DndContext>
                       </div>
                     </>
                   )}
