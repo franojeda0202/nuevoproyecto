@@ -1,24 +1,80 @@
 'use client'
 
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { EjercicioEditable } from '@/lib/types/database'
 
 interface EjercicioRowProps {
   ejercicio: EjercicioEditable
+  index: number
   onEdit: (ejercicio: EjercicioEditable) => void
   onDelete: (ejercicio: EjercicioEditable) => void
   isDeleting?: boolean
 }
 
+// Ícono de grip (6 puntos) para el handle de arrastre
+function GripIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <circle cx="5" cy="4" r="1.2" />
+      <circle cx="11" cy="4" r="1.2" />
+      <circle cx="5" cy="8" r="1.2" />
+      <circle cx="11" cy="8" r="1.2" />
+      <circle cx="5" cy="12" r="1.2" />
+      <circle cx="11" cy="12" r="1.2" />
+    </svg>
+  )
+}
+
 export default function EjercicioRow({
   ejercicio,
+  index,
   onEdit,
   onDelete,
   isDeleting = false
 }: EjercicioRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ejercicio.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   return (
-    <tr className={`border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors ${
-      isDeleting ? 'opacity-50 pointer-events-none' : ''
-    }`}>
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={`border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors ${
+        isDeleting ? 'opacity-50 pointer-events-none' : ''
+      } ${isDragging ? 'opacity-60 shadow-lg bg-white relative z-10' : ''}`}
+    >
+      {/* Handle de arrastre + número */}
+      <td className="pl-4 pr-2 py-3 w-10">
+        <div className="flex items-center gap-1.5">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none"
+            title="Arrastrar para reordenar"
+            tabIndex={-1}
+          >
+            <GripIcon className="w-4 h-4" />
+          </button>
+          <span className="text-xs text-slate-400 w-3 text-right select-none">{index}</span>
+        </div>
+      </td>
       <td className="px-4 py-3">
         <p className="font-medium text-gray-900">{ejercicio.ejercicio.nombre}</p>
       </td>
@@ -66,19 +122,49 @@ export default function EjercicioRow({
 // Versión compacta para móviles
 export function EjercicioRowMobile({
   ejercicio,
+  index,
   onEdit,
   onDelete,
   isDeleting = false
 }: EjercicioRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: ejercicio.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
   return (
-    <div className={`bg-white rounded-xl border border-slate-200 p-4 ${
-      isDeleting ? 'opacity-50 pointer-events-none' : ''
-    }`}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-white rounded-xl border border-slate-200 p-4 ${
+        isDeleting ? 'opacity-50 pointer-events-none' : ''
+      } ${isDragging ? 'opacity-60 shadow-xl border-slate-300 z-10' : ''}`}
+    >
       <div className="flex justify-between items-start gap-3">
-        <div className="flex-1 min-w-0">
+        {/* Handle + número + nombre */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing touch-none flex-shrink-0"
+            title="Arrastrar para reordenar"
+            tabIndex={-1}
+          >
+            <GripIcon className="w-4 h-4" />
+          </button>
+          <span className="text-xs text-slate-400 select-none flex-shrink-0">{index}.</span>
           <p className="font-semibold text-gray-900 truncate">{ejercicio.ejercicio.nombre}</p>
         </div>
-        
+
         <div className="flex gap-1 flex-shrink-0">
           <button
             onClick={() => onEdit(ejercicio)}
@@ -98,8 +184,8 @@ export function EjercicioRowMobile({
           </button>
         </div>
       </div>
-      
-      <div className="mt-3 flex items-center gap-4 text-sm">
+
+      <div className="mt-3 flex items-center gap-4 text-sm pl-7">
         <div>
           <span className="text-gray-500">Series:</span>
           <span className="ml-1 font-semibold text-gray-900">{ejercicio.series}</span>
@@ -109,9 +195,9 @@ export function EjercicioRowMobile({
           <span className="ml-1 font-semibold text-gray-900">{ejercicio.repeticiones}</span>
         </div>
       </div>
-      
+
       {ejercicio.notas_coach && (
-        <p className="mt-2 text-sm text-gray-600 bg-slate-50 rounded-lg px-3 py-2 flex items-start gap-1.5">
+        <p className="mt-2 text-sm text-gray-600 bg-slate-50 rounded-lg px-3 py-2 flex items-start gap-1.5 ml-7">
           <svg className="w-3.5 h-3.5 text-yellow-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
