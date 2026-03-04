@@ -19,6 +19,8 @@ function formatearFecha(iso: string): string {
 export default function EntrenamientoPage() {
   const [sesiones, setSesiones] = useState<SesionResumen[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const [retryKey, setRetryKey] = useState(0)
 
   const router = useRouter()
   const supabase = createClient()
@@ -34,10 +36,31 @@ export default function EntrenamientoPage() {
     obtenerHistorialSesiones(supabase, userId).then(result => {
       if (result.success && result.data) {
         setSesiones(result.data)
+      } else if (!result.success) {
+        setError(true)
       }
       setLoading(false)
     })
-  }, [loadingAuth, authenticated, userId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [loadingAuth, authenticated, userId, retryKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+          <div className="text-center">
+            <p className="text-slate-600 mb-4">No se pudo cargar el historial. Intentá de nuevo.</p>
+            <button
+              type="button"
+              onClick={() => { setError(false); setLoading(true); setRetryKey(k => k + 1) }}
+              className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all"
+            >
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
 
   if (loadingAuth || loading) {
     return (
