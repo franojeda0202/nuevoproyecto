@@ -223,3 +223,33 @@ export interface SesionActiva {
   finalizada_at: string | null
   ejercicios: EjercicioConSeries[]
 }
+
+// ============================================
+// Tipos para Historial de Entrenamientos
+// ============================================
+
+export interface SesionResumen {
+  id: string
+  dia_nombre: string
+  finalizada_at: string    // ISO string
+  series_completadas: number
+}
+
+export interface SerieDetalle {
+  numero_serie: number
+  peso_kg: number | null
+  repeticiones: number | null
+  completada: boolean
+}
+
+export interface EjercicioDetalle {
+  nombre: string
+  series: SerieDetalle[]
+}
+
+export interface SesionDetalle {
+  id: string
+  dia_nombre: string
+  finalizada_at: string
+  ejercicios: EjercicioDetalle[]
+}

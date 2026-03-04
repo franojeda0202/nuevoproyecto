@@ -4,6 +4,10 @@ import {
   SesionActiva,
   SesionSerieEditable,
   EjercicioConSeries,
+  SesionResumen,
+  SesionDetalle,
+  EjercicioDetalle,
+  SerieDetalle,
 } from '@/lib/types/database'
 import { isValidUUID } from './rutina-service'
 
@@ -310,5 +314,131 @@ export async function finalizarSesion(
   } catch (err) {
     console.error('Error en finalizarSesion:', err)
     return { success: false, error: 'Error al finalizar la sesión' }
+  }
+}
+
+/**
+ * Obtener historial de sesiones finalizadas del usuario
+ * Incluye el conteo de series completadas por sesión
+ */
+export async function obtenerHistorialSesiones(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<ResultadoOperacion<SesionResumen[]>> {
+  if (!isValidUUID(userId)) return { success: false, error: 'ID inválido' }
+
+  try {
+    const { data: sesiones, error } = await supabase
+      .from('sesiones')
+      .select('id, finalizada_at, rutina_dias(nombre_dia)')
+      .eq('user_id', userId)
+      .not('finalizada_at', 'is', null)
+      .order('finalizada_at', { ascending: false })
+
+    if (error) {
+      console.error('Error obteniendo historial:', error)
+      return { success: false, error: 'Error al cargar el historial' }
+    }
+
+    if (!sesiones || sesiones.length === 0) {
+      return { success: true, data: [] }
+    }
+
+    // Obtener conteo de series completadas para todas las sesiones en una sola query
+    const sesionIds = sesiones.map(s => s.id)
+    const { data: seriesCompletadas } = await supabase
+      .from('sesion_series')
+      .select('sesion_id')
+      .in('sesion_id', sesionIds)
+      .eq('completada', true)
+
+    // Contar por sesion_id en JS
+    const conteoMap: Record<string, number> = {}
+    for (const s of seriesCompletadas || []) {
+      conteoMap[s.sesion_id] = (conteoMap[s.sesion_id] || 0) + 1
+    }
+
+    const resumen: SesionResumen[] = sesiones.map(s => ({
+      id: s.id,
+      dia_nombre: (s.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? '',
+      finalizada_at: s.finalizada_at as string,
+      series_completadas: conteoMap[s.id] || 0,
+    }))
+
+    return { success: true, data: resumen }
+  } catch (err) {
+    console.error('Error en obtenerHistorialSesiones:', err)
+    return { success: false, error: 'Error al cargar el historial' }
+  }
+}
+
+/**
+ * Obtener el detalle completo de una sesión finalizada (read-only)
+ */
+export async function obtenerDetalleSesion(
+  supabase: SupabaseClient,
+  sesionId: string
+): Promise<ResultadoOperacion<SesionDetalle>> {
+  if (!isValidUUID(sesionId)) return { success: false, error: 'ID inválido' }
+
+  try {
+    // Sesión + nombre del día
+    const { data: sesion, error: sesionError } = await supabase
+      .from('sesiones')
+      .select('id, dia_id, finalizada_at, rutina_dias(nombre_dia)')
+      .eq('id', sesionId)
+      .single()
+
+    if (sesionError || !sesion) {
+      return { success: false, error: 'Sesión no encontrada' }
+    }
+
+    const diaNombre = (sesion.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? ''
+
+    // Ejercicios del día + series de la sesión en paralelo
+    const [ejResult, seriesResult] = await Promise.all([
+      supabase
+        .from('rutina_ejercicios')
+        .select('id, orden, ejercicios:ejercicio_id(nombre)')
+        .eq('dia_id', sesion.dia_id)
+        .order('orden', { ascending: true }),
+      supabase
+        .from('sesion_series')
+        .select('rutina_ejercicio_id, numero_serie, peso_kg, repeticiones, completada')
+        .eq('sesion_id', sesionId)
+        .order('numero_serie', { ascending: true }),
+    ])
+
+    if (ejResult.error || !ejResult.data) {
+      return { success: false, error: 'Error al cargar ejercicios' }
+    }
+
+    const series = seriesResult.data || []
+
+    const ejercicios: EjercicioDetalle[] = ejResult.data.map(ej => {
+      const nombre = (ej.ejercicios as unknown as { nombre: string } | null)?.nombre ?? ''
+      const ejSeries: SerieDetalle[] = series
+        .filter(s => s.rutina_ejercicio_id === ej.id)
+        .map(s => ({
+          numero_serie: s.numero_serie,
+          peso_kg: s.peso_kg,
+          repeticiones: s.repeticiones,
+          completada: s.completada,
+        }))
+      return { nombre, series: ejSeries }
+    })
+
+    return {
+      success: true,
+      data: {
+        id: sesionId,
+        dia_nombre: diaNombre,
+        finalizada_at: sesion.finalizada_at as string,
+        ejercicios,
+      },
+    }
+  } catch (err) {
+    console.error('Error en obtenerDetalleSesion:', err)
+    return { success: false, error: 'Error al cargar el detalle' }
   }
 }
