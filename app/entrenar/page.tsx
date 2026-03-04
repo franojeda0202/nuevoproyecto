@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/hooks'
 import { obtenerRutinaEditable } from '@/lib/services/rutina-service'
 import { crearSesion, obtenerSesionEnProgreso } from '@/lib/services/sesion-service'
 import { DiaConEjerciciosEditables } from '@/lib/types/database'
+import toast from 'react-hot-toast'
 
 export default function EntrenarPage() {
   const [dias, setDias] = useState<DiaConEjerciciosEditables[]>([])
@@ -57,6 +58,8 @@ export default function EntrenarPage() {
     const resultado = await crearSesion(supabase, { userId, rutinaId, diaId })
     if (resultado.success && resultado.data) {
       router.push(`/entrenar/${resultado.data.sesionId}`)
+    } else {
+      toast.error('No se pudo iniciar la sesión. Intentá de nuevo.')
     }
 
     setCreando(null)
