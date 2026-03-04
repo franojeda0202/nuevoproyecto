@@ -73,10 +73,10 @@ export default function DetalleSesionPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen app-page-bg p-4 md:p-6">
-        <div className="max-w-lg mx-auto">
+      <div className="min-h-screen app-page-bg p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="mb-6">
+          <div className="mb-8">
             <button
               type="button"
               onClick={() => router.push('/entrenamiento')}
@@ -97,7 +97,7 @@ export default function DetalleSesionPage() {
           </div>
 
           {/* Ejercicios */}
-          <div className="space-y-5">
+          <div className="grid md:grid-cols-2 gap-5">
             {sesion.ejercicios.map((ej, ejIdx) => (
               <div
                 key={ejIdx}

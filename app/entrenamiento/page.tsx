@@ -74,8 +74,8 @@ export default function EntrenamientoPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen app-page-bg p-4 md:p-6">
-        <div className="max-w-lg mx-auto">
+      <div className="min-h-screen app-page-bg p-4 md:p-8">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
@@ -102,7 +102,7 @@ export default function EntrenamientoPage() {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {sesiones.map(sesion => (
                 <button
                   key={sesion.id}

@@ -78,8 +78,8 @@ export default function EntrenarPage() {
 
   return (
     <AppLayout>
-    <div className="min-h-screen app-page-bg p-4 md:p-6">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen app-page-bg p-4 md:p-8">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="pl-14 md:pl-0 text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">

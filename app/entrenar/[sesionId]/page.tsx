@@ -172,8 +172,8 @@ export default function SesionActivaPage() {
 
   return (
     <AppLayout>
-    <div className="min-h-screen app-page-bg p-4 md:p-6 pb-28">
-      <div className="max-w-lg mx-auto">
+    <div className="min-h-screen app-page-bg p-4 md:p-8 pb-28">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <button
@@ -193,7 +193,7 @@ export default function SesionActivaPage() {
         </div>
 
         {/* Ejercicios */}
-        <div className="space-y-5">
+        <div className="grid md:grid-cols-2 gap-5">
           {sesion.ejercicios.map((ej) => (
             <div
               key={ej.rutina_ejercicio_id}
