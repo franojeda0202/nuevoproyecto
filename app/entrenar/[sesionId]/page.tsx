@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import toast from 'react-hot-toast'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks'
@@ -73,16 +74,17 @@ export default function SesionActivaPage() {
       if (!prev) return prev
       const ej = prev.ejercicios.find(e => e.rutina_ejercicio_id === ejId)
       const serie = ej?.series.find(s => s.id === serieId)
-      if (!serie) return prev
-
-      // Fire-and-forget auto-save
-      actualizarSerie(supabase, {
-        id: serieId,
-        peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
-        repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
-        completada: serie.completada,
-      })
-
+      if (serie) {
+        // Fire-and-forget auto-save — fuera del loop de render para evitar doble ejecución en Strict Mode
+        Promise.resolve().then(() => {
+          actualizarSerie(supabase, {
+            id: serieId,
+            peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
+            repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
+            completada: serie.completada,
+          })
+        })
+      }
       return prev
     })
   }, [supabase]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -124,7 +126,12 @@ export default function SesionActivaPage() {
 
   const handleFinalizar = async () => {
     setFinalizando(true)
-    await finalizarSesion(supabase, sesionId)
+    const resultado = await finalizarSesion(supabase, sesionId)
+    if (!resultado.success) {
+      toast.error('No se pudo finalizar la sesión. Intentá de nuevo.')
+      setFinalizando(false)
+      return
+    }
     router.push('/rutinas')
   }
 
