@@ -398,6 +398,13 @@ export default function RutinasPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button
+              type="button"
+              onClick={() => router.push('/entrenar')}
+              className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all duration-200 shadow-lg shadow-neutral-900/10"
+            >
+              Entrenar
+            </button>
+            <button
               onClick={handleGenerateNew}
               className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
             >
