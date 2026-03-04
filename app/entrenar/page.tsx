@@ -52,7 +52,7 @@ export default function EntrenarPage() {
   }, [loadingAuth, authenticated, userId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSeleccionarDia = async (diaId: string) => {
-    if (!userId || !rutinaId) return
+    if (!userId || !rutinaId || sesionEnProgreso) return
     setCreando(diaId)
 
     const resultado = await crearSesion(supabase, { userId, rutinaId, diaId })
@@ -122,7 +122,7 @@ export default function EntrenarPage() {
                   key={dia.id}
                   type="button"
                   onClick={() => handleSeleccionarDia(dia.id)}
-                  disabled={!!creando}
+                  disabled={!!creando || !!sesionEnProgreso}
                   className="w-full p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-yellow-400 hover:bg-yellow-50/50 transition-all duration-200 disabled:opacity-50 shadow-sm"
                 >
                   <p className="font-semibold text-slate-900">{dia.nombre_dia}</p>

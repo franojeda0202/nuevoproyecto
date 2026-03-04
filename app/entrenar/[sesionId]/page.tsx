@@ -160,6 +160,11 @@ export default function SesionActivaPage() {
     )
   }
 
+  if (sesion.finalizada_at) {
+    router.replace('/rutinas')
+    return null
+  }
+
   return (
     <div className="min-h-screen app-page-bg p-4 md:p-6 pb-28">
       <div className="max-w-lg mx-auto">
