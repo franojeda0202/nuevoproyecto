@@ -527,27 +527,27 @@ export default function RutinasPage() {
                   ) : (
                     <>
                       <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr className="bg-slate-100/80">
-                              <th className="py-3 pl-4 pr-2 w-10" />
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider [font-variant:small-caps]">Ejercicio</th>
-                              <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-20 [font-variant:small-caps]">Series</th>
-                              <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-24 [font-variant:small-caps]">Reps</th>
-                              <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider [font-variant:small-caps]">Notas</th>
-                              <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-24 [font-variant:small-caps]">Acciones</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <DndContext
-                              sensors={sensors}
-                              collisionDetection={closestCenter}
-                              onDragEnd={(event) => handleDragEnd(event, dia.id)}
-                            >
-                              <SortableContext
-                                items={dia.ejercicios.map(e => e.id)}
-                                strategy={verticalListSortingStrategy}
-                              >
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => handleDragEnd(event, dia.id)}
+                        >
+                          <SortableContext
+                            items={dia.ejercicios.map(e => e.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <table className="w-full border-collapse">
+                              <thead>
+                                <tr className="bg-slate-100/80">
+                                  <th className="py-3 pl-4 pr-2 w-10" />
+                                  <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider [font-variant:small-caps]">Ejercicio</th>
+                                  <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-20 [font-variant:small-caps]">Series</th>
+                                  <th className="text-center py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-24 [font-variant:small-caps]">Reps</th>
+                                  <th className="text-left py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider [font-variant:small-caps]">Notas</th>
+                                  <th className="text-right py-3 px-4 text-xs font-semibold text-slate-600 uppercase tracking-wider w-24 [font-variant:small-caps]">Acciones</th>
+                                </tr>
+                              </thead>
+                              <tbody>
                                 {dia.ejercicios.map((ejercicio, index) => (
                                   <EjercicioRow
                                     key={ejercicio.id}
@@ -557,10 +557,10 @@ export default function RutinasPage() {
                                     onDelete={handleOpenDeleteConfirm}
                                   />
                                 ))}
-                              </SortableContext>
-                            </DndContext>
-                          </tbody>
-                        </table>
+                              </tbody>
+                            </table>
+                          </SortableContext>
+                        </DndContext>
                       </div>
 
                       <div className="md:hidden space-y-3">
