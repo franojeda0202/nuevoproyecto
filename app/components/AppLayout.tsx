@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks'
 
@@ -21,6 +21,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const cerrar = () => setDrawerOpen(false)
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') cerrar()
+    }
+    if (drawerOpen) document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [drawerOpen])
+
   const isActivo = (href: string) =>
     pathname === href || (pathname?.startsWith(href + '/') && href !== '/rutinas')
 
@@ -31,9 +39,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
         type="button"
         onClick={() => setDrawerOpen(true)}
         aria-label="Abrir menú"
-        className="fixed top-4 left-4 z-40 w-10 h-10 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
+        className="fixed top-4 left-4 z-40 w-10 h-10 flex items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm border border-neutral-200 shadow-sm hover:bg-neutral-50 transition-colors"
       >
-        <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-5 h-5 text-neutral-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -49,6 +57,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Drawer lateral */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
         className={`fixed top-0 left-0 h-full w-64 bg-neutral-900 z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
           drawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
