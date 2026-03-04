@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { ChatMessage } from '@/lib/types/chat'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
@@ -12,6 +13,8 @@ const STORAGE_KEY = 'gymlogic_chat_history'
 
 export default function ChatBubble() {
   const { authenticated, loading } = useAuth()
+  const pathname = usePathname()
+  const enSesionActiva = pathname?.startsWith('/entrenar/') && pathname !== '/entrenar'
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -155,7 +158,7 @@ export default function ChatBubble() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-14 h-14 bg-neutral-900 text-white rounded-full shadow-2xl shadow-neutral-900/30 hover:bg-neutral-800 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95"
+          className={`fixed ${enSesionActiva ? 'bottom-24' : 'bottom-4 md:bottom-6'} right-4 md:right-6 w-14 h-14 bg-neutral-900 text-white rounded-full shadow-2xl shadow-neutral-900/30 hover:bg-neutral-800 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95`}
           aria-label="Abrir chat"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -166,7 +169,7 @@ export default function ChatBubble() {
 
       {/* Ventana de chat */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[calc(100vh-8rem)] md:h-[600px] max-h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50">
+        <div className={`fixed ${enSesionActiva ? 'bottom-24' : 'bottom-4 md:bottom-6'} right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[calc(100vh-8rem)] md:h-[600px] max-h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
             <div className="flex items-center gap-2">
