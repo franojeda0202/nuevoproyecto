@@ -387,6 +387,7 @@ export async function obtenerDetalleSesion(
       .from('sesiones')
       .select('id, dia_id, finalizada_at, rutina_dias(nombre_dia)')
       .eq('id', sesionId)
+      .not('finalizada_at', 'is', null)
       .single()
 
     if (sesionError || !sesion) {
@@ -412,8 +413,10 @@ export async function obtenerDetalleSesion(
     if (ejResult.error || !ejResult.data) {
       return { success: false, error: 'Error al cargar ejercicios' }
     }
-
-    const series = seriesResult.data || []
+    if (seriesResult.error) {
+      return { success: false, error: 'Error al cargar las series' }
+    }
+    const series = seriesResult.data ?? []
 
     const ejercicios: EjercicioDetalle[] = ejResult.data.map(ej => {
       const nombre = (ej.ejercicios as unknown as { nombre: string } | null)?.nombre ?? ''
