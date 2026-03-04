@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks'
+import AppLayout from '@/app/components/AppLayout'
 import {
   obtenerSesionActiva,
   actualizarSerie,
@@ -137,26 +138,30 @@ export default function SesionActivaPage() {
 
   if (loadingAuth || loading) {
     return (
-      <div className="min-h-screen app-page-bg flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AppLayout>
+        <div className="min-h-screen app-page-bg flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AppLayout>
     )
   }
 
   if (!sesion) {
     return (
-      <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-slate-600 mb-4">Sesión no encontrada.</p>
-          <button
-            type="button"
-            onClick={() => router.push('/entrenar')}
-            className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all"
-          >
-            Volver a Entrenar
-          </button>
+      <AppLayout>
+        <div className="min-h-screen app-page-bg flex items-center justify-center p-4">
+          <div className="text-center">
+            <p className="text-slate-600 mb-4">Sesión no encontrada.</p>
+            <button
+              type="button"
+              onClick={() => router.push('/entrenar')}
+              className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all"
+            >
+              Volver a Entrenar
+            </button>
+          </div>
         </div>
-      </div>
+      </AppLayout>
     )
   }
 
@@ -166,6 +171,7 @@ export default function SesionActivaPage() {
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen app-page-bg p-4 md:p-6 pb-28">
       <div className="max-w-lg mx-auto">
         {/* Header */}
@@ -180,7 +186,7 @@ export default function SesionActivaPage() {
             </svg>
             Cambiar día
           </button>
-          <h1 className="text-4xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+          <h1 className="pl-14 md:pl-0 text-4xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
             {sesion.dia_nombre}
           </h1>
           <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
@@ -240,5 +246,6 @@ export default function SesionActivaPage() {
         </div>
       </div>
     </div>
+    </AppLayout>
   )
 }

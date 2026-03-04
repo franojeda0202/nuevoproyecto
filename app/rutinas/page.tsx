@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
 import { EjercicioEditable, DiaConEjerciciosEditables, ModalEjercicioState } from '@/lib/types/database'
 import { useAuth } from '@/lib/hooks'
+import AppLayout from '@/app/components/AppLayout'
 import { RutinaSkeleton } from '@/app/components/Skeleton'
 import { EjercicioModal, EjercicioRow, EjercicioRowMobile } from '@/app/components/rutina'
 import {
@@ -64,7 +65,7 @@ export default function RutinasPage() {
 
   const router = useRouter()
   const supabase = createClient()
-  const { loading: loadingAuth, authenticated, user, userId, logout } = useAuth()
+  const { loading: loadingAuth, authenticated, user, userId } = useAuth()
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -379,16 +380,21 @@ export default function RutinasPage() {
   // ==========================================
 
   if (loadingAuth || loadingRutina) {
-    return <RutinaSkeleton />
+    return (
+      <AppLayout>
+        <RutinaSkeleton />
+      </AppLayout>
+    )
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen app-page-bg p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+            <h1 className="pl-14 md:pl-0 text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
               Mi Rutina Activa
             </h1>
             <div className="h-0.5 w-12 bg-yellow-500 rounded-full mb-2" />
@@ -411,12 +417,6 @@ export default function RutinasPage() {
               className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
             >
               Nueva Rutina
-            </button>
-            <button
-              onClick={logout}
-              className="px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
-            >
-              Cerrar Sesión
             </button>
           </div>
         </div>
@@ -699,5 +699,6 @@ export default function RutinasPage() {
         onClose={() => setPremiumModalOpen(false)}
       />
     </div>
+    </AppLayout>
   )
 }

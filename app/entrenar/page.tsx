@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks'
+import AppLayout from '@/app/components/AppLayout'
 import { obtenerRutinaEditable } from '@/lib/services/rutina-service'
 import { crearSesion, obtenerSesionEnProgreso } from '@/lib/services/sesion-service'
 import { DiaConEjerciciosEditables } from '@/lib/types/database'
@@ -67,18 +68,21 @@ export default function EntrenarPage() {
 
   if (loadingAuth || loading) {
     return (
-      <div className="min-h-screen app-page-bg flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AppLayout>
+        <div className="min-h-screen app-page-bg flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AppLayout>
     )
   }
 
   return (
+    <AppLayout>
     <div className="min-h-screen app-page-bg p-4 md:p-6">
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+          <h1 className="pl-14 md:pl-0 text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
             Entrenar
           </h1>
           <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
@@ -135,14 +139,8 @@ export default function EntrenarPage() {
           </>
         )}
 
-        <button
-          type="button"
-          onClick={() => router.push('/rutinas')}
-          className="mt-8 w-full py-3 text-slate-500 text-sm font-medium hover:text-slate-700 transition-colors"
-        >
-          ← Volver a Mi Rutina
-        </button>
       </div>
     </div>
+    </AppLayout>
   )
 }
