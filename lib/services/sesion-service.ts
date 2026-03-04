@@ -191,6 +191,7 @@ export async function obtenerSesionActiva(
         .select('rutina_ejercicio_id, peso_kg, repeticiones')
         .eq('sesion_id', lastSession.id)
         .eq('completada', true)
+        .order('numero_serie', { ascending: true })
 
       if (lastSeries) {
         // Tomar el primer valor completado por ejercicio (número de serie más bajo)
