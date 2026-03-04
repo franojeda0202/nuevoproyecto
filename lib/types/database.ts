@@ -169,3 +169,57 @@ export interface DiaConEjerciciosEditables {
   orden: number
   ejercicios: EjercicioEditable[]
 }
+
+// ============================================
+// Tipos para Sesiones de Entrenamiento
+// ============================================
+
+export interface Sesion {
+  id: string
+  user_id: string
+  rutina_id: string
+  dia_id: string
+  iniciada_at: string
+  finalizada_at: string | null
+  created_at: string
+}
+
+export interface SesionSerie {
+  id: string
+  sesion_id: string
+  rutina_ejercicio_id: string
+  numero_serie: number
+  peso_kg: number | null
+  repeticiones: number | null
+  completada: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Estado editable de una serie (inputs como string para los inputs HTML)
+export interface SesionSerieEditable {
+  id: string
+  sesion_id: string
+  rutina_ejercicio_id: string
+  numero_serie: number
+  peso_kg: string       // string para el input (vacío = no ingresado)
+  repeticiones: string  // string para el input
+  completada: boolean
+}
+
+// Ejercicio con sus series para la pantalla de sesión activa
+export interface EjercicioConSeries {
+  rutina_ejercicio_id: string
+  nombre: string
+  series_rutina: number  // cuántas series tiene programadas en la rutina
+  series: SesionSerieEditable[]
+  ultima_serie: { peso_kg: number | null; repeticiones: number | null } | null  // pre-fill
+}
+
+// Datos completos para la pantalla de sesión activa
+export interface SesionActiva {
+  id: string
+  dia_nombre: string
+  finalizada_at: string | null
+  ejercicios: EjercicioConSeries[]
+}
