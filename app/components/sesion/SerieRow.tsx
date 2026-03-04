@@ -42,6 +42,7 @@ export default function SerieRow({
       <input
         type="number"
         inputMode="decimal"
+        min="0"
         value={pesoActual}
         onChange={(e) => onPesoChange(serieId, e.target.value)}
         onBlur={() => onBlur(serieId)}
@@ -54,6 +55,7 @@ export default function SerieRow({
       <input
         type="number"
         inputMode="numeric"
+        min="0"
         value={repsActual}
         onChange={(e) => onRepsChange(serieId, e.target.value)}
         onBlur={() => onBlur(serieId)}
@@ -64,13 +66,14 @@ export default function SerieRow({
 
       {/* Toggle completada */}
       <button
+        type="button"
         onClick={() => onToggleCompletada(serieId)}
         className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
           completada
             ? 'bg-yellow-500 text-black'
             : 'bg-white border-2 border-slate-200 text-slate-200'
         }`}
-        title={completada ? 'Marcar como incompleta' : 'Marcar como completada'}
+        aria-label={completada ? 'Marcar como incompleta' : 'Marcar como completada'}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
