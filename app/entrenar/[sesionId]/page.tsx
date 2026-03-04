@@ -179,7 +179,7 @@ export default function SesionActivaPage() {
           <button
             type="button"
             onClick={() => router.push('/entrenar')}
-            className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-flex items-center gap-1 transition-colors"
+            className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-flex items-center gap-1 transition-colors pl-14 md:pl-0"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -233,7 +233,7 @@ export default function SesionActivaPage() {
       </div>
 
       {/* Botón finalizar sticky */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-200">
+      <div className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-200">
         <div className="max-w-lg mx-auto">
           <button
             type="button"
