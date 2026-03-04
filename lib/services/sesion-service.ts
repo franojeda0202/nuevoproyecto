@@ -110,8 +110,7 @@ export async function obtenerSesionEnProgreso(
       success: true,
       data: {
         sesionId: data.id,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        diaNombre: (data.rutina_dias as any)?.nombre_dia || '',
+        diaNombre: (data.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? '',
       },
     }
   } catch (err) {
@@ -144,32 +143,31 @@ export async function obtenerSesionActiva(
       return { success: false, error: 'Sesión no encontrada' }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const diaNombre = (sesion.rutina_dias as any)?.nombre_dia || ''
+    const diaNombre = (sesion.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? ''
 
-    // Cargar ejercicios del día
-    const { data: ejercicios, error: ejError } = await supabase
-      .from('rutina_ejercicios')
-      .select('id, series, orden, ejercicios:ejercicio_id(nombre)')
-      .eq('dia_id', sesion.dia_id)
-      .order('orden', { ascending: true })
+    // Cargar ejercicios del día y series actuales en paralelo
+    const [ejResult, seriesResult] = await Promise.all([
+      supabase
+        .from('rutina_ejercicios')
+        .select('id, series, orden, ejercicios:ejercicio_id(nombre)')
+        .eq('dia_id', sesion.dia_id)
+        .order('orden', { ascending: true }),
+      supabase
+        .from('sesion_series')
+        .select('id, rutina_ejercicio_id, numero_serie, peso_kg, repeticiones, completada')
+        .eq('sesion_id', sesionId)
+        .order('numero_serie', { ascending: true }),
+    ])
 
-    if (ejError || !ejercicios) {
+    if (ejResult.error || !ejResult.data) {
       return { success: false, error: 'Error al cargar ejercicios' }
     }
-
-    // Cargar series actuales de esta sesión
-    const { data: seriesData, error: seriesError } = await supabase
-      .from('sesion_series')
-      .select('id, rutina_ejercicio_id, numero_serie, peso_kg, repeticiones, completada')
-      .eq('sesion_id', sesionId)
-      .order('numero_serie', { ascending: true })
-
-    if (seriesError) {
+    if (seriesResult.error) {
       return { success: false, error: 'Error al cargar series de la sesión' }
     }
 
-    const series = seriesData || []
+    const ejercicios = ejResult.data
+    const series = seriesResult.data || []
 
     // Pre-fill: buscar la sesión más reciente finalizada para el mismo día
     const prefillMap: Record<string, { peso_kg: number | null; repeticiones: number | null }> = {}
@@ -208,8 +206,7 @@ export async function obtenerSesionActiva(
 
     // Armar estructura EjercicioConSeries[]
     const ejerciciosConSeries: EjercicioConSeries[] = ejercicios.map(ej => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const nombre = (ej.ejercicios as any)?.nombre || ''
+      const nombre = (ej.ejercicios as unknown as { nombre: string } | null)?.nombre ?? ''
 
       const ejSeries: SesionSerieEditable[] = series
         .filter(s => s.rutina_ejercicio_id === ej.id)
@@ -248,9 +245,9 @@ export async function obtenerSesionActiva(
 }
 
 /**
- * Auto-save de una serie (fire-and-forget desde la UI)
+ * Actualizar una serie existente (auto-save fire-and-forget desde la UI)
  */
-export async function upsertSerie(
+export async function actualizarSerie(
   supabase: SupabaseClient,
   serie: {
     id: string
@@ -279,7 +276,7 @@ export async function upsertSerie(
 
     return { success: true, data: null }
   } catch (err) {
-    console.error('Error en upsertSerie:', err)
+    console.error('Error en actualizarSerie:', err)
     return { success: false, error: 'Error al guardar serie' }
   }
 }
@@ -294,14 +291,19 @@ export async function finalizarSesion(
   if (!isValidUUID(sesionId)) return { success: false, error: 'ID inválido' }
 
   try {
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('sesiones')
       .update({ finalizada_at: new Date().toISOString() })
       .eq('id', sesionId)
+      .select('id')
 
     if (error) {
       console.error('Error finalizando sesión:', error)
       return { success: false, error: 'Error al finalizar la sesión' }
+    }
+
+    if (!updated || updated.length === 0) {
+      return { success: false, error: 'Sesión no encontrada' }
     }
 
     return { success: true, data: null }
