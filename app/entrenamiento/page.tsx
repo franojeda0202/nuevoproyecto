@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks'
-import { obtenerHistorialSesiones } from '@/lib/services/sesion-service'
+import { obtenerHistorialSesiones, eliminarSesion } from '@/lib/services/sesion-service'
 import { SesionResumen } from '@/lib/types/database'
 import AppLayout from '@/app/components/AppLayout'
+import toast from 'react-hot-toast'
 
 function formatearFecha(iso: string): string {
   return new Date(iso).toLocaleDateString('es-AR', {
@@ -21,6 +22,9 @@ export default function EntrenamientoPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [retryKey, setRetryKey] = useState(0)
+  const [menuAbierto, setMenuAbierto] = useState<string | null>(null)
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null)
+  const [eliminando, setEliminando] = useState<string | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -42,6 +46,25 @@ export default function EntrenamientoPage() {
       setLoading(false)
     })
   }, [loadingAuth, authenticated, userId, retryKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!menuAbierto) return
+    const handleClick = () => setMenuAbierto(null)
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [menuAbierto])
+
+  const handleEliminar = async (sesionId: string) => {
+    setEliminando(sesionId)
+    const resultado = await eliminarSesion(supabase, sesionId, userId!)
+    if (resultado.success) {
+      setSesiones(prev => prev.filter(s => s.id !== sesionId))
+    } else {
+      toast.error('No se pudo eliminar el entrenamiento. Intentá de nuevo.')
+    }
+    setEliminando(null)
+    setConfirmandoId(null)
+  }
 
   if (error) {
     return (
@@ -115,22 +138,80 @@ export default function EntrenamientoPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
               {sesiones.map(sesion => (
-                <button
-                  key={sesion.id}
-                  type="button"
-                  onClick={() => router.push(`/entrenamiento/${sesion.id}`)}
-                  className="w-full p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-yellow-400 hover:bg-yellow-50/30 transition-all duration-200 shadow-sm"
-                >
-                  <p className="font-bold text-slate-900">{sesion.dia_nombre}</p>
-                  <p className="text-sm text-slate-500 mt-0.5">
-                    {formatearFecha(sesion.finalizada_at)}
-                    {sesion.series_completadas > 0 && (
-                      <span className="ml-2 text-yellow-600 font-medium">
-                        · {sesion.series_completadas} series ✓
-                      </span>
-                    )}
-                  </p>
-                </button>
+                <div key={sesion.id}>
+                  {confirmandoId === sesion.id ? (
+                    /* Estado de confirmación */
+                    <div className="w-full p-4 bg-white border border-red-200 rounded-xl shadow-sm">
+                      <p className="font-semibold text-slate-900 text-sm mb-1">{sesion.dia_nombre}</p>
+                      <p className="text-slate-500 text-sm mb-3">¿Eliminar este entrenamiento?</p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setConfirmandoId(null)}
+                          className="flex-1 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEliminar(sesion.id)}
+                          disabled={eliminando === sesion.id}
+                          className="flex-1 py-1.5 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                        >
+                          {eliminando === sesion.id ? '...' : 'Eliminar'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Estado normal */
+                    <div className="relative bg-white border border-slate-200 rounded-xl shadow-sm hover:border-yellow-400 hover:bg-yellow-50/30 transition-all duration-200">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/entrenamiento/${sesion.id}`)}
+                        className="w-full p-4 text-left"
+                      >
+                        <p className="font-bold text-slate-900 pr-8">{sesion.dia_nombre}</p>
+                        <p className="text-sm text-slate-500 mt-0.5">
+                          {formatearFecha(sesion.finalizada_at)}
+                          {sesion.series_completadas > 0 && (
+                            <span className="ml-2 text-yellow-600 font-medium">
+                              · {sesion.series_completadas} series ✓
+                            </span>
+                          )}
+                        </p>
+                      </button>
+
+                      {/* Botón tres puntos */}
+                      <div className="absolute top-3 right-3">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onClick={() => setMenuAbierto(menuAbierto === sesion.id ? null : sesion.id)}
+                          className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors text-lg leading-none"
+                          aria-label="Opciones"
+                        >
+                          ···
+                        </button>
+
+                        {/* Dropdown */}
+                        {menuAbierto === sesion.id && (
+                          <div
+                            onMouseDown={(e) => e.stopPropagation()}
+                            className="absolute right-0 top-8 bg-white border border-slate-200 rounded-xl shadow-lg z-10 py-1 min-w-[130px]"
+                          >
+                            <button
+                              type="button"
+                              onClick={() => { setConfirmandoId(sesion.id); setMenuAbierto(null) }}
+                              className="w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left transition-colors"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
