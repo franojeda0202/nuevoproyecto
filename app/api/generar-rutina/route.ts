@@ -9,6 +9,11 @@ import { join } from 'path'
 
 const GENERIC_ERROR_MESSAGE = 'No se pudo generar la rutina. Intenta de nuevo en unos minutos.'
 
+const SYSTEM_PROMPT_RUTINA = readFileSync(
+  join(process.cwd(), 'lib/prompts/system-prompt-rutina.txt'),
+  'utf-8'
+)
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   timeout: 50_000, // 50s — rutina compleja requiere más tiempo que el chat
@@ -107,18 +112,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
     }
 
-    // 2. Leer system prompt
-    const systemPrompt = readFileSync(
-      join(process.cwd(), 'lib/prompts/system-prompt-rutina.txt'),
-      'utf-8'
-    )
-
-    // 3. Llamar a OpenAI
+    // 2. Llamar a OpenAI
     const completion = await openai.chat.completions.create({
       model: 'gpt-4.1-mini',
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: SYSTEM_PROMPT_RUTINA },
         { role: 'user', content: buildUserPrompt(userId, config, ejercicios) },
       ],
     })

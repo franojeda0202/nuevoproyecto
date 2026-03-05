@@ -15,14 +15,12 @@ const openai = new OpenAI({
 
 const MODEL = 'gpt-4o-mini'
 const GENERIC_CHAT_ERROR = 'No se pudo procesar tu mensaje. Intenta de nuevo en unos momentos.'
+const SYSTEM_PROMPT = readFileSync(
+  join(process.cwd(), 'lib', 'prompts', 'system-prompt.txt'),
+  'utf-8'
+).trim()
 
 export async function POST(request: NextRequest) {
-  // Leer system prompt dentro del handler (seguro en Vercel serverless)
-  const SYSTEM_PROMPT = readFileSync(
-    join(process.cwd(), 'lib', 'prompts', 'system-prompt.txt'),
-    'utf-8'
-  ).trim()
-
   let userId: string | null = null
 
   try {
