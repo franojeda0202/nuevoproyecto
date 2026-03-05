@@ -80,6 +80,7 @@ export default function SesionActivaPage() {
         Promise.resolve().then(() => {
           actualizarSerie(supabase, {
             id: serieId,
+            sesionId,
             peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
             repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
             completada: serie.completada,
@@ -117,6 +118,7 @@ export default function SesionActivaPage() {
       if (serieActualizada) {
         actualizarSerie(supabase, {
           id: serieId,
+          sesionId,
           peso_kg: serieActualizada.peso_kg ? parseFloat(serieActualizada.peso_kg) : null,
           repeticiones: serieActualizada.repeticiones ? parseInt(serieActualizada.repeticiones) : null,
           completada: serieActualizada.completada,

@@ -257,12 +257,13 @@ export async function actualizarSerie(
   supabase: SupabaseClient,
   serie: {
     id: string
+    sesionId: string
     peso_kg: number | null
     repeticiones: number | null
     completada: boolean
   }
 ): Promise<ResultadoOperacion<null>> {
-  if (!isValidUUID(serie.id)) return { success: false, error: 'ID inválido' }
+  if (!isValidUUID(serie.id) || !isValidUUID(serie.sesionId)) return { success: false, error: 'IDs inválidos' }
 
   try {
     const { error } = await supabase
@@ -274,6 +275,7 @@ export async function actualizarSerie(
         updated_at: new Date().toISOString(),
       })
       .eq('id', serie.id)
+      .eq('sesion_id', serie.sesionId)
 
     if (error) {
       console.error('Error guardando serie:', error)
