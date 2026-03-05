@@ -22,7 +22,7 @@ export default function DetalleSesionPage() {
   const sesionId = params.sesionId as string
   const router = useRouter()
   const supabase = createClient()
-  const { loading: loadingAuth, authenticated } = useAuth()
+  const { loading: loadingAuth, authenticated, userId } = useAuth()
 
   const [sesion, setSesion] = useState<SesionDetalle | null>(null)
   const [loading, setLoading] = useState(true)
@@ -34,7 +34,7 @@ export default function DetalleSesionPage() {
       return
     }
 
-    obtenerDetalleSesion(supabase, sesionId).then(result => {
+    obtenerDetalleSesion(supabase, sesionId, userId!).then(result => {
       if (result.success && result.data) {
         setSesion(result.data)
       }

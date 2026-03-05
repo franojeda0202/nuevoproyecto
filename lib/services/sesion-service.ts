@@ -383,9 +383,10 @@ export async function obtenerHistorialSesiones(
  */
 export async function obtenerDetalleSesion(
   supabase: SupabaseClient,
-  sesionId: string
+  sesionId: string,
+  userId: string
 ): Promise<ResultadoOperacion<SesionDetalle>> {
-  if (!isValidUUID(sesionId)) return { success: false, error: 'ID inválido' }
+  if (!isValidUUID(sesionId) || !isValidUUID(userId)) return { success: false, error: 'IDs inválidos' }
 
   try {
     // Sesión + nombre del día
@@ -393,6 +394,7 @@ export async function obtenerDetalleSesion(
       .from('sesiones')
       .select('id, dia_id, finalizada_at, rutina_dias(nombre_dia)')
       .eq('id', sesionId)
+      .eq('user_id', userId)             // ← NUEVO
       .not('finalizada_at', 'is', null)
       .single()
 
