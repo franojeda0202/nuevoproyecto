@@ -131,9 +131,10 @@ export async function obtenerSesionEnProgreso(
  */
 export async function obtenerSesionActiva(
   supabase: SupabaseClient,
-  sesionId: string
+  sesionId: string,
+  userId: string
 ): Promise<ResultadoOperacion<SesionActiva>> {
-  if (!isValidUUID(sesionId)) return { success: false, error: 'ID inválido' }
+  if (!isValidUUID(sesionId) || !isValidUUID(userId)) return { success: false, error: 'IDs inválidos' }
 
   try {
     // Cargar sesión con nombre del día
@@ -141,6 +142,7 @@ export async function obtenerSesionActiva(
       .from('sesiones')
       .select('id, dia_id, user_id, finalizada_at, rutina_dias(nombre_dia)')
       .eq('id', sesionId)
+      .eq('user_id', userId)   // ← NUEVO
       .single()
 
     if (sesionError || !sesion) {
@@ -290,15 +292,17 @@ export async function actualizarSerie(
  */
 export async function finalizarSesion(
   supabase: SupabaseClient,
-  sesionId: string
+  sesionId: string,
+  userId: string
 ): Promise<ResultadoOperacion<null>> {
-  if (!isValidUUID(sesionId)) return { success: false, error: 'ID inválido' }
+  if (!isValidUUID(sesionId) || !isValidUUID(userId)) return { success: false, error: 'IDs inválidos' }
 
   try {
     const { data: updated, error } = await supabase
       .from('sesiones')
       .update({ finalizada_at: new Date().toISOString() })
       .eq('id', sesionId)
+      .eq('user_id', userId)   // ← NUEVO
       .select('id')
 
     if (error) {
