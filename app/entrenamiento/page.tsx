@@ -55,8 +55,9 @@ export default function EntrenamientoPage() {
   }, [menuAbierto])
 
   const handleEliminar = async (sesionId: string) => {
+    if (!userId) return
     setEliminando(sesionId)
-    const resultado = await eliminarSesion(supabase, sesionId, userId!)
+    const resultado = await eliminarSesion(supabase, sesionId, userId)
     if (resultado.success) {
       setSesiones(prev => prev.filter(s => s.id !== sesionId))
     } else {
