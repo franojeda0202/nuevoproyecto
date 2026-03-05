@@ -177,7 +177,14 @@ export async function POST(request: NextRequest) {
 
     // Helper para eliminar la rutina huérfana si algo falla después de insertarla
     async function limpiarRutinaHuerfana() {
-      await supabase.from('rutinas').delete().eq('id', rutina!.id)
+      const { error: cleanupError } = await supabase
+        .from('rutinas')
+        .delete()
+        .eq('id', rutina!.id)
+      if (cleanupError) {
+        console.error('[generar-rutina] Error limpiando rutina huérfana:', cleanupError, 'rutina_id:', rutina!.id)
+        if (userId) trackErrorServer(userId, 'api/generar-rutina', `cleanup_failed:${rutina!.id}`)
+      }
     }
 
     // 5. INSERT rutina_dias y rutina_ejercicios secuencialmente
