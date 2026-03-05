@@ -491,6 +491,17 @@ export async function eliminarSesion(
   }
 
   try {
+    // Eliminar series primero (evita FK violation si no hay CASCADE)
+    const { error: seriesError } = await supabase
+      .from('sesion_series')
+      .delete()
+      .eq('sesion_id', sesionId)
+
+    if (seriesError) {
+      console.error('Error eliminando series de sesión:', seriesError)
+      return { success: false, error: 'Error al eliminar el entrenamiento' }
+    }
+
     const { error } = await supabase
       .from('sesiones')
       .delete()
