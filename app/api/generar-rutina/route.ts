@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
 
       if (diaError || !rutinaDia) {
         console.error('[generar-rutina] Error creando día:', diaError)
-        trackErrorServer(userId!, 'api/generar-rutina', 'Error creando día en Supabase')
+        if (userId) trackErrorServer(userId, 'api/generar-rutina', 'Error creando día en Supabase')
         await limpiarRutinaHuerfana()
         return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
       }
@@ -242,7 +242,7 @@ export async function POST(request: NextRequest) {
 
       if (ejerciciosInsertError) {
         console.error('[generar-rutina] Error creando ejercicios:', ejerciciosInsertError)
-        trackErrorServer(userId!, 'api/generar-rutina', 'Error creando ejercicios en Supabase')
+        if (userId) trackErrorServer(userId, 'api/generar-rutina', 'Error creando ejercicios en Supabase')
         await limpiarRutinaHuerfana()
         return NextResponse.json({ error: GENERIC_ERROR_MESSAGE }, { status: 500 })
       }
