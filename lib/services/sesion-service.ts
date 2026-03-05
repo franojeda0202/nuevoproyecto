@@ -491,7 +491,19 @@ export async function eliminarSesion(
   }
 
   try {
-    // Eliminar series primero (evita FK violation si no hay CASCADE)
+    // Verificar ownership antes de tocar datos relacionados
+    const { data: sesion, error: ownerError } = await supabase
+      .from('sesiones')
+      .select('id')
+      .eq('id', sesionId)
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (ownerError || !sesion) {
+      return { success: false, error: 'Sesión no encontrada' }
+    }
+
+    // Ownership confirmado — eliminar series primero (evita FK violation si no hay CASCADE)
     const { error: seriesError } = await supabase
       .from('sesion_series')
       .delete()
