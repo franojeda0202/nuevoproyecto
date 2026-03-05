@@ -477,3 +477,34 @@ export async function obtenerDetalleSesion(
     return { success: false, error: 'Error al cargar el detalle' }
   }
 }
+
+/**
+ * Eliminar una sesión finalizada del historial
+ */
+export async function eliminarSesion(
+  supabase: SupabaseClient,
+  sesionId: string,
+  userId: string
+): Promise<ResultadoOperacion<null>> {
+  if (!isValidUUID(sesionId) || !isValidUUID(userId)) {
+    return { success: false, error: 'IDs inválidos' }
+  }
+
+  try {
+    const { error } = await supabase
+      .from('sesiones')
+      .delete()
+      .eq('id', sesionId)
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('Error eliminando sesión:', error)
+      return { success: false, error: 'Error al eliminar el entrenamiento' }
+    }
+
+    return { success: true, data: null }
+  } catch (err) {
+    console.error('Error en eliminarSesion:', err)
+    return { success: false, error: 'Error al eliminar el entrenamiento' }
+  }
+}
