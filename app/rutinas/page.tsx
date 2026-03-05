@@ -76,7 +76,7 @@ export default function RutinasPage() {
     })
   )
 
-  const handleDragEnd = (event: DragEndEvent, diaId: string) => {
+  const handleDragEnd = async (event: DragEndEvent, diaId: string) => {
     const { active, over } = event
     if (!over || active.id === over.id || !rutinaData) return
 
@@ -88,9 +88,10 @@ export default function RutinasPage() {
     const reordenados = arrayMove(dia.ejercicios, oldIndex, newIndex)
       .map((ej, idx) => ({ ...ej, orden: idx + 1 }))
 
-    // Fire-and-forget: guardar en DB sin bloquear la UI
-    reordenarEjercicios(supabase, reordenados.map(e => ({ id: e.id, orden: e.orden })))
+    // Guardar orden previo para rollback en caso de error
+    const ordenPrevio = dia.ejercicios
 
+    // Optimistic update
     setRutinaData(prev => {
       if (!prev) return prev
       return {
@@ -100,6 +101,22 @@ export default function RutinasPage() {
         ),
       }
     })
+
+    const resultado = await reordenarEjercicios(supabase, reordenados.map(e => ({ id: e.id, orden: e.orden })))
+
+    if (!resultado.success) {
+      // Revertir al orden previo
+      setRutinaData(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          dias: prev.dias.map(d =>
+            d.id === diaId ? { ...d, ejercicios: ordenPrevio } : d
+          ),
+        }
+      })
+      toast.error('No se pudo guardar el nuevo orden. Intentá de nuevo.')
+    }
   }
 
   // Cargar rutina cuando el usuario está autenticado
