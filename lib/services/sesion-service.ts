@@ -14,6 +14,14 @@ import { isValidUUID } from './rutina-service'
 /**
  * Crear una nueva sesión de entrenamiento para un día
  * También crea todas las filas de sesion_series (una por ejercicio × serie)
+ *
+ * PREREQUISITO DB (ejecutar una vez en Supabase Dashboard → SQL Editor):
+ *   CREATE UNIQUE INDEX IF NOT EXISTS sesiones_user_sesion_activa_unique
+ *     ON sesiones (user_id)
+ *     WHERE finalizada_at IS NULL;
+ *
+ * Este índice garantiza que un usuario solo pueda tener una sesión activa a la vez.
+ * Si no existe el índice, el manejo del error 23505 abajo no tendrá efecto.
  */
 export async function crearSesion(
   supabase: SupabaseClient,
@@ -48,6 +56,10 @@ export async function crearSesion(
       .single()
 
     if (sesionError || !sesion) {
+      // 23505 = unique_violation: ya existe una sesión activa para este usuario
+      if (sesionError?.code === '23505') {
+        return { success: false, error: 'Ya tenés una sesión activa. Finalizala antes de empezar una nueva.' }
+      }
       console.error('Error creando sesión:', sesionError)
       return { success: false, error: 'Error al crear la sesión' }
     }
