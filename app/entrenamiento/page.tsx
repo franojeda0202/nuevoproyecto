@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks'
@@ -27,7 +27,7 @@ export default function EntrenamientoPage() {
   const [eliminando, setEliminando] = useState<string | null>(null)
 
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { loading: loadingAuth, authenticated, userId } = useAuth()
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import toast from 'react-hot-toast'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -18,7 +18,7 @@ export default function SesionActivaPage() {
   const params = useParams()
   const sesionId = params.sesionId as string
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { loading: loadingAuth, authenticated, userId } = useAuth()
 
   const [sesion, setSesion] = useState<SesionActiva | null>(null)

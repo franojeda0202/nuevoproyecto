@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks'
@@ -21,7 +21,7 @@ export default function DetalleSesionPage() {
   const params = useParams()
   const sesionId = params.sesionId as string
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { loading: loadingAuth, authenticated, userId } = useAuth()
 
   const [sesion, setSesion] = useState<SesionDetalle | null>(null)

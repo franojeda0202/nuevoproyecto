@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
@@ -64,7 +64,7 @@ export default function RutinasPage() {
   const trackedPremiumFeatures = useRef(new Set<string>())
 
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { loading: loadingAuth, authenticated, user, userId } = useAuth()
 
   const sensors = useSensors(
