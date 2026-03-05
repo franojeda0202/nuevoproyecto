@@ -94,7 +94,14 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .gte('created_at', unMinutoAtras)
 
-    if (!rateLimitError && (rutinasRecientes ?? 0) >= 2) {
+    if (rateLimitError) {
+      console.error('[generar-rutina] Error en rate limit check, bloqueando por precaución:', rateLimitError)
+      return NextResponse.json(
+        { error: 'Error temporal. Intentá de nuevo en un momento.' },
+        { status: 503 }
+      )
+    }
+    if ((rutinasRecientes ?? 0) >= 2) {
       return NextResponse.json(
         { error: 'Has alcanzado el límite de generación. Espera un minuto antes de intentar de nuevo.' },
         { status: 429 }
