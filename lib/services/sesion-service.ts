@@ -24,6 +24,18 @@ export async function crearSesion(
   }
 
   try {
+    // Verificar que el día pertenece a la rutina (defense-in-depth)
+    const { data: diaValido, error: diaError } = await supabase
+      .from('rutina_dias')
+      .select('id')
+      .eq('id', params.diaId)
+      .eq('rutina_id', params.rutinaId)
+      .single()
+
+    if (diaError || !diaValido) {
+      return { success: false, error: 'Día no encontrado en la rutina' }
+    }
+
     // Crear la sesión
     const { data: sesion, error: sesionError } = await supabase
       .from('sesiones')
