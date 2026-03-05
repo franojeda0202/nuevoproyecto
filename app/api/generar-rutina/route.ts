@@ -12,7 +12,7 @@ const GENERIC_ERROR_MESSAGE = 'No se pudo generar la rutina. Intenta de nuevo en
 const SYSTEM_PROMPT_RUTINA = readFileSync(
   join(process.cwd(), 'lib/prompts/system-prompt-rutina.txt'),
   'utf-8'
-)
+).trim()
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
