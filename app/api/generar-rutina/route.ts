@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     // 1. Obtener todos los ejercicios disponibles
     const { data: ejercicios, error: ejerciciosError } = await supabase
       .from('ejercicios')
-      .select('*')
+      .select('id, nombre, segmento, patron_movimiento, grupo_muscular, equipamiento')
 
     if (ejerciciosError || !ejercicios?.length) {
       console.error('[generar-rutina] Error obteniendo ejercicios:', ejerciciosError)
