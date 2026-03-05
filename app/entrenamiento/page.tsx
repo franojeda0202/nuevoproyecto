@@ -77,11 +77,22 @@ export default function EntrenamientoPage() {
       <div className="min-h-screen app-page-bg p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
-              Entrenamiento
-            </h1>
-            <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
+          <div className="mb-8 flex items-end justify-between">
+            <div>
+              <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
+                Entrenamientos
+              </h1>
+              <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
+            </div>
+            {sesiones.length > 0 && (
+              <button
+                type="button"
+                onClick={() => router.push('/entrenar')}
+                className="flex-shrink-0 px-5 py-2.5 bg-yellow-500 text-black rounded-xl font-semibold text-sm hover:bg-yellow-400 transition-all"
+              >
+                Comenzar entrenamiento
+              </button>
+            )}
           </div>
 
           {/* Lista de sesiones */}
@@ -98,7 +109,7 @@ export default function EntrenamientoPage() {
                 onClick={() => router.push('/entrenar')}
                 className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all"
               >
-                Ir a Entrenar
+                Comenzar entrenamiento
               </button>
             </div>
           ) : (

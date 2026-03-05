@@ -9,8 +9,8 @@ interface AppLayoutProps {
 }
 
 const NAV_ITEMS = [
-  { label: 'Mi Rutina', href: '/rutinas' },
-  { label: 'Entrenamiento', href: '/entrenamiento' },
+  { label: 'Tu Rutina', href: '/rutinas' },
+  { label: 'Entrenamientos', href: '/entrenamiento' },
 ]
 
 export default function AppLayout({ children }: AppLayoutProps) {
