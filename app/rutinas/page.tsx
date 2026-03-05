@@ -426,7 +426,7 @@ export default function RutinasPage() {
                 onClick={() => router.push('/entrenar')}
                 className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all duration-200 shadow-lg shadow-neutral-900/10"
               >
-                Entrenar
+                Comenzar entrenamiento
               </button>
             )}
             <button
