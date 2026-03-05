@@ -73,22 +73,21 @@ export default function SesionActivaPage() {
   const handleBlur = useCallback((serieId: string, ejId: string) => {
     setSesion(prev => {
       if (!prev) return prev
+      // Solo lectura de estado — safe para doble invocación de Strict Mode
       const ej = prev.ejercicios.find(e => e.rutina_ejercicio_id === ejId)
       const serie = ej?.series.find(s => s.id === serieId)
       if (serie) {
-        // Fire-and-forget auto-save — fuera del loop de render para evitar doble ejecución en Strict Mode
-        Promise.resolve().then(() => {
-          actualizarSerie(supabase, {
-            id: serieId,
-            sesionId,
-            peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
-            repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
-          })
+        // Side-effect fuera del updater
+        actualizarSerie(supabase, {
+          id: serieId,
+          sesionId,
+          peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
+          repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
         })
       }
       return prev
     })
-  }, [supabase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [supabase, sesionId])
 
   const handleToggleCompletada = (serieId: string, ejId: string) => {
     let serieActualizada: { peso_kg: string; repeticiones: string; completada: boolean } | null = null
