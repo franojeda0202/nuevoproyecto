@@ -29,12 +29,12 @@ export default function DetalleSesionPage() {
 
   useEffect(() => {
     if (loadingAuth) return
-    if (!authenticated) {
+    if (!authenticated || !userId) {
       router.replace('/')
       return
     }
 
-    obtenerDetalleSesion(supabase, sesionId, userId!).then(result => {
+    obtenerDetalleSesion(supabase, sesionId, userId).then(result => {
       if (result.success && result.data) {
         setSesion(result.data)
       }

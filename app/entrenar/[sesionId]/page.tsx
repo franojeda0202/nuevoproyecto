@@ -27,12 +27,12 @@ export default function SesionActivaPage() {
 
   useEffect(() => {
     if (loadingAuth) return
-    if (!authenticated) {
+    if (!authenticated || !userId) {
       router.replace('/')
       return
     }
 
-    obtenerSesionActiva(supabase, sesionId, userId!).then(result => {
+    obtenerSesionActiva(supabase, sesionId, userId).then(result => {
       if (result.success && result.data) {
         setSesion(result.data)
       }
@@ -130,8 +130,9 @@ export default function SesionActivaPage() {
   }
 
   const handleFinalizar = async () => {
+    if (!userId) return
     setFinalizando(true)
-    const resultado = await finalizarSesion(supabase, sesionId, userId!)
+    const resultado = await finalizarSesion(supabase, sesionId, userId)
     if (!resultado.success) {
       toast.error('No se pudo finalizar la sesión. Intentá de nuevo.')
       setFinalizando(false)
