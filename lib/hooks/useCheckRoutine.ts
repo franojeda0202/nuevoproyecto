@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -24,7 +24,7 @@ export function useCheckRoutine(
   const [hasRoutine, setHasRoutine] = useState<boolean | null>(null)
   const [routineId, setRoutineId] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     // No verificar si no hay userId, si se debe saltar, o si ya verificamos
@@ -32,7 +32,6 @@ export function useCheckRoutine(
 
     const checkRoutine = async () => {
       setChecking(true)
-      console.log('🔍 useCheckRoutine: Verificando si existe rutina...')
       
       try {
         const { data, error } = await supabase
@@ -50,16 +49,13 @@ export function useCheckRoutine(
         }
 
         if (data?.id) {
-          console.log('✅ useCheckRoutine: Rutina encontrada')
           setHasRoutine(true)
           setRoutineId(data.id)
-          
+
           if (redirectOnFound) {
-            console.log('🔄 useCheckRoutine: Redirigiendo a /rutinas...')
             router.push('/rutinas')
           }
         } else {
-          console.log('📝 useCheckRoutine: No hay rutina')
           setHasRoutine(false)
         }
       } catch (err) {
@@ -71,7 +67,7 @@ export function useCheckRoutine(
     }
 
     checkRoutine()
-  }, [userId, skipCheck, hasRoutine, redirectOnFound, router, supabase])
+  }, [userId, skipCheck, hasRoutine, redirectOnFound]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     checking,
