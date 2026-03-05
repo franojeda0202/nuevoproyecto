@@ -414,7 +414,7 @@ export async function reordenarEjercicios(
   }
 
   try {
-    await Promise.all(
+    const results = await Promise.all(
       ejercicios.map(({ id, orden }) =>
         supabase
           .from('rutina_ejercicios')
@@ -422,6 +422,11 @@ export async function reordenarEjercicios(
           .eq('id', id)
       )
     )
+    const failed = results.find(r => r.error)
+    if (failed) {
+      console.error('Error reordenando ejercicios:', failed.error)
+      return { success: false, error: 'Error al guardar el orden' }
+    }
     return { success: true, data: null }
   } catch (err) {
     console.error('Error reordenando ejercicios:', err)
