@@ -50,8 +50,8 @@ export default function EntrenamientoPage() {
   useEffect(() => {
     if (!menuAbierto) return
     const handleClick = () => setMenuAbierto(null)
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
   }, [menuAbierto])
 
   const handleEliminar = async (sesionId: string) => {
@@ -186,8 +186,7 @@ export default function EntrenamientoPage() {
                       <div className="absolute top-3 right-3">
                         <button
                           type="button"
-                          onMouseDown={(e) => e.stopPropagation()}
-                          onClick={() => { setConfirmandoId(null); setMenuAbierto(menuAbierto === sesion.id ? null : sesion.id) }}
+                          onClick={(e) => { e.stopPropagation(); setConfirmandoId(null); setMenuAbierto(menuAbierto === sesion.id ? null : sesion.id) }}
                           className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors text-lg leading-none"
                           aria-label="Opciones"
                         >
@@ -197,7 +196,6 @@ export default function EntrenamientoPage() {
                         {/* Dropdown */}
                         {menuAbierto === sesion.id && (
                           <div
-                            onMouseDown={(e) => e.stopPropagation()}
                             className="absolute right-0 top-8 bg-white border border-slate-200 rounded-xl shadow-lg z-10 py-1 min-w-[130px]"
                           >
                             <button
