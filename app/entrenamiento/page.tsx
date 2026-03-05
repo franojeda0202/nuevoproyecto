@@ -90,7 +90,7 @@ export default function EntrenamientoPage() {
                 onClick={() => router.push('/entrenar')}
                 className="flex-shrink-0 px-5 py-2.5 bg-yellow-500 text-black rounded-xl font-semibold text-sm hover:bg-yellow-400 transition-all"
               >
-                Comenzar entrenamiento
+                + Entrenar
               </button>
             )}
           </div>
@@ -109,7 +109,7 @@ export default function EntrenamientoPage() {
                 onClick={() => router.push('/entrenar')}
                 className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all"
               >
-                Comenzar entrenamiento
+                + Entrenar
               </button>
             </div>
           ) : (
