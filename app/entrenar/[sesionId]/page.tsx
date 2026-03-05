@@ -71,22 +71,26 @@ export default function SesionActivaPage() {
   }
 
   const handleBlur = useCallback((serieId: string, ejId: string) => {
+    let serieParaGuardar: { peso_kg: string; repeticiones: string } | null = null
+
     setSesion(prev => {
       if (!prev) return prev
-      // Solo lectura de estado — safe para doble invocación de Strict Mode
       const ej = prev.ejercicios.find(e => e.rutina_ejercicio_id === ejId)
       const serie = ej?.series.find(s => s.id === serieId)
-      if (serie) {
-        // Side-effect fuera del updater
-        actualizarSerie(supabase, {
-          id: serieId,
-          sesionId,
-          peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
-          repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
-        })
-      }
+      if (serie) serieParaGuardar = { peso_kg: serie.peso_kg, repeticiones: serie.repeticiones }
       return prev
     })
+
+    // Side-effect FUERA del updater — no se ejecuta doble en Strict Mode
+    if (serieParaGuardar) {
+      const { peso_kg, repeticiones } = serieParaGuardar
+      actualizarSerie(supabase, {
+        id: serieId,
+        sesionId,
+        peso_kg: peso_kg ? parseFloat(peso_kg) : null,
+        repeticiones: repeticiones ? parseInt(repeticiones) : null,
+      })
+    }
   }, [supabase, sesionId])
 
   const handleToggleCompletada = (serieId: string, ejId: string) => {
