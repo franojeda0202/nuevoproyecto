@@ -260,7 +260,7 @@ export async function actualizarSerie(
     sesionId: string
     peso_kg: number | null
     repeticiones: number | null
-    completada: boolean
+    completada?: boolean
   }
 ): Promise<ResultadoOperacion<null>> {
   if (!isValidUUID(serie.id) || !isValidUUID(serie.sesionId)) return { success: false, error: 'IDs inválidos' }
@@ -271,7 +271,7 @@ export async function actualizarSerie(
       .update({
         peso_kg: serie.peso_kg,
         repeticiones: serie.repeticiones,
-        completada: serie.completada,
+        ...(serie.completada !== undefined && { completada: serie.completada }),
         updated_at: new Date().toISOString(),
       })
       .eq('id', serie.id)

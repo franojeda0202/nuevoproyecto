@@ -83,7 +83,6 @@ export default function SesionActivaPage() {
             sesionId,
             peso_kg: serie.peso_kg ? parseFloat(serie.peso_kg) : null,
             repeticiones: serie.repeticiones ? parseInt(serie.repeticiones) : null,
-            completada: serie.completada,
           })
         })
       }
