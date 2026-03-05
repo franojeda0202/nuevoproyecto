@@ -148,7 +148,8 @@ export default function EntrenamientoPage() {
                         <button
                           type="button"
                           onClick={() => setConfirmandoId(null)}
-                          className="flex-1 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                          disabled={eliminando === sesion.id}
+                          className="flex-1 py-1.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors disabled:opacity-50"
                         >
                           Cancelar
                         </button>
@@ -186,7 +187,7 @@ export default function EntrenamientoPage() {
                         <button
                           type="button"
                           onMouseDown={(e) => e.stopPropagation()}
-                          onClick={() => setMenuAbierto(menuAbierto === sesion.id ? null : sesion.id)}
+                          onClick={() => { setConfirmandoId(null); setMenuAbierto(menuAbierto === sesion.id ? null : sesion.id) }}
                           className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors text-lg leading-none"
                           aria-label="Opciones"
                         >
