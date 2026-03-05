@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { User } from '@supabase/supabase-js'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +17,7 @@ export function useAuth(): UseAuthReturn {
   const [loading, setLoading] = useState(true)
   const [authenticated, setAuthenticated] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -32,7 +32,7 @@ export function useAuth(): UseAuthReturn {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase])
 
   const logout = useCallback(async () => {
     try {
