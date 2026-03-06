@@ -211,7 +211,8 @@ export interface SesionSerieEditable {
 export interface EjercicioConSeries {
   rutina_ejercicio_id: string
   nombre: string
-  series_rutina: number  // cuántas series tiene programadas en la rutina
+  series_rutina: number       // cuántas series tiene programadas en la rutina
+  repeticiones_rutina: string // reps objetivo de la rutina (ej: "8-12", "10", "Al fallo")
   series: SesionSerieEditable[]
   ultima_serie: { peso_kg: number | null; repeticiones: number | null } | null  // pre-fill
 }

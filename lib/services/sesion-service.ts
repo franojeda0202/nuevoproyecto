@@ -179,7 +179,7 @@ export async function obtenerSesionActiva(
     const [ejResult, seriesResult] = await Promise.all([
       supabase
         .from('rutina_ejercicios')
-        .select('id, series, orden, ejercicios:ejercicio_id(nombre)')
+        .select('id, series, repeticiones, orden, ejercicios:ejercicio_id(nombre)')
         .eq('dia_id', sesion.dia_id)
         .order('orden', { ascending: true }),
       supabase
@@ -254,6 +254,7 @@ export async function obtenerSesionActiva(
         rutina_ejercicio_id: ej.id,
         nombre,
         series_rutina: ej.series,
+        repeticiones_rutina: (ej.repeticiones as string | null) ?? '',
         series: ejSeries,
         ultima_serie: prefillMap[ej.id] || null,
       }
