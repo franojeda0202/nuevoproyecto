@@ -191,7 +191,7 @@ export default function SesionActivaPage() {
             </svg>
             Cambiar día
           </button>
-          <h1 className="pl-14 md:pl-0 text-4xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+          <h1 className="pl-14 md:pl-0 text-3xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
             {sesion.dia_nombre}
           </h1>
           <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />

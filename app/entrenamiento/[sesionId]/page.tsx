@@ -87,7 +87,7 @@ export default function DetalleSesionPage() {
               </svg>
               Historial
             </button>
-            <h1 className="text-4xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
+            <h1 className="text-3xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
               {sesion.dia_nombre}
             </h1>
             <p className="text-slate-500 text-sm capitalize pl-14 md:pl-0">
