@@ -49,7 +49,6 @@ export default function SerieRow({
         placeholder={pesoPrevio !== null ? String(pesoPrevio) : '—'}
         className="w-20 px-2 py-2 text-center text-sm font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
       />
-      <span className="text-xs text-slate-400 flex-shrink-0">kg</span>
 
       {/* Input reps */}
       <input
@@ -62,7 +61,6 @@ export default function SerieRow({
         placeholder={repsPrevias !== null ? String(repsPrevias) : '—'}
         className="w-16 px-2 py-2 text-center text-sm font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
       />
-      <span className="text-xs text-slate-400 flex-shrink-0">reps</span>
 
       {/* Toggle completada */}
       <button
