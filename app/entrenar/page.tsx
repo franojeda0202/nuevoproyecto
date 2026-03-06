@@ -82,7 +82,7 @@ export default function EntrenarPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="pl-14 md:pl-0 text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+          <h1 className="pl-14 md:pl-0 text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
             Entrenar
           </h1>
           <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />

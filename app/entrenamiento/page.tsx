@@ -103,7 +103,7 @@ export default function EntrenamientoPage() {
           {/* Header */}
           <div className="mb-8 flex items-end justify-between">
             <div>
-              <h1 className="text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
+              <h1 className="text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
                 Entrenamientos
               </h1>
               <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />

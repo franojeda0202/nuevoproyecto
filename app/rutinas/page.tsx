@@ -411,7 +411,7 @@ export default function RutinasPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
           <div>
-            <h1 className="pl-14 md:pl-0 text-5xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+            <h1 className="pl-14 md:pl-0 text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
               Mi Rutina Activa
             </h1>
             <div className="h-0.5 w-12 bg-yellow-500 rounded-full mb-2" />
@@ -527,7 +527,7 @@ export default function RutinasPage() {
             </div>
 
             {/* Días y ejercicios */}
-            <div className="p-6 space-y-8">
+            <div className="p-4 md:p-6 space-y-8">
               {rutinaData.dias.map((dia) => (
                 <div key={dia.id} className="space-y-4">
                   <div className="pb-2 border-b border-slate-200 flex items-center gap-2">
