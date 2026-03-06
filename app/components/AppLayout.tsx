@@ -67,7 +67,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex overflow-x-hidden">
       {/* ── Sidebar persistente (desktop) ── */}
       <aside className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-neutral-900 z-30">
         <div className="p-6 border-b border-neutral-800">
@@ -129,7 +129,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* ── Contenido principal ── */}
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 md:ml-64 min-w-0">
         {children}
       </div>
     </div>
