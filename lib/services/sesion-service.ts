@@ -254,6 +254,7 @@ export async function obtenerSesionActiva(
         rutina_ejercicio_id: ej.id,
         nombre,
         series_rutina: ej.series,
+        // Supabase retorna `any` sin schema generado; la columna es TEXT en DB (ver RutinaEjercicio)
         repeticiones_rutina: (ej.repeticiones as string | null) ?? '',
         series: ejSeries,
         ultima_serie: prefillMap[ej.id] || null,
