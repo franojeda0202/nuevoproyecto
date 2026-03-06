@@ -206,8 +206,10 @@ export default function SesionActivaPage() {
             >
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-slate-900">{ej.nombre}</h3>
-                <span className="text-xs font-medium text-slate-400 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg flex-shrink-0">
-                  {ej.series_rutina} × {ej.repeticiones_rutina}
+                <span className="text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-1 rounded-lg flex-shrink-0">
+                  {ej.repeticiones_rutina
+                    ? `${ej.series_rutina} × ${ej.repeticiones_rutina}`
+                    : `${ej.series_rutina} series`}
                 </span>
               </div>
 
