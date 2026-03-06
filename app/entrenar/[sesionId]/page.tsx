@@ -204,7 +204,12 @@ export default function SesionActivaPage() {
               key={ej.rutina_ejercicio_id}
               className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"
             >
-              <h3 className="font-bold text-slate-900 mb-3">{ej.nombre}</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-bold text-slate-900">{ej.nombre}</h3>
+                <span className="text-xs font-medium text-slate-400 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg flex-shrink-0">
+                  {ej.series_rutina} × {ej.repeticiones_rutina}
+                </span>
+              </div>
 
               {/* Headers de columnas */}
               <div className="flex items-center gap-2 px-3 mb-2">
