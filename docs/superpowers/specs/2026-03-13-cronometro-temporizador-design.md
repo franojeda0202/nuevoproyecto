@@ -106,7 +106,7 @@ interface TemporizadorPanelProps {
 - Handle drag visual (pill gris centrado arriba)
 - Título "Descanso" en texto pequeño uppercase
 - Fila de presets: `1:00 · 1:30 · 2:00 · 3:00` (botones seleccionables, el seleccionado en `bg-yellow-500`)
-- Preset por defecto seleccionado: `2:00`
+- `selectedPreset` es estado local del panel, inicializado en `120` (2:00). Persiste la última selección del usuario durante la sesión. Al reabrir el panel después de que un timer terminó, `selectedPreset` mantiene el valor anterior — el usuario puede hacer Start inmediatamente para repetir el mismo descanso.
 - Botón "▶ Start" en `bg-neutral-900 text-white`
 - Overlay oscuro semitransparente detrás del panel, click en overlay cierra el panel
 
@@ -126,16 +126,24 @@ const [tiempoRestante, setTiempoRestante] = useState(0)    // segundos
 const [tiempoTotal, setTiempoTotal] = useState(0)          // para la barra de progreso
 const [timerCorriendo, setTimerCorriendo] = useState(false)
 const audioCtxRef = useRef<AudioContext | null>(null)
+const beepFiredRef = useRef(false)  // guard contra doble beep en Strict Mode
 const [panelOpen, setPanelOpen] = useState(false)
 
 const handleStart = (segundos: number) => {
   // Desbloquear AudioContext en este gesto del usuario
-  if (!audioCtxRef.current) {
-    audioCtxRef.current = new AudioContext()
+  // Envuelto en try/catch: Safari <14.1 usa webkitAudioContext; cualquier fallo no debe impedir que el timer arranque
+  try {
+    if (!audioCtxRef.current) {
+      const AudioCtx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      audioCtxRef.current = new AudioCtx()
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume()
+    }
+  } catch {
+    // Sin sonido en este navegador — el timer funciona igual
   }
-  if (audioCtxRef.current.state === 'suspended') {
-    audioCtxRef.current.resume()
-  }
+  beepFiredRef.current = false  // resetear guard al iniciar nuevo timer
   setTiempoRestante(segundos)
   setTiempoTotal(segundos)
   setTimerCorriendo(true)
@@ -154,22 +162,32 @@ const handleCancelar = () => {
 useEffect(() => {
   if (!timerCorriendo || tiempoRestante <= 0) return
   const id = setInterval(() => {
+    // Capturar si llegamos a cero FUERA del updater, siguiendo el patrón del proyecto
+    // (nunca llamar side-effects async dentro de setState updaters — CLAUDE.md)
+    let terminado = false
+
     setTiempoRestante(prev => {
       if (prev <= 1) {
-        clearInterval(id)
-        setTimerCorriendo(false)
-        reproducirBeep(audioCtxRef.current)
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+        terminado = true
         return 0
       }
       return prev - 1
     })
+
+    // Side-effects FUERA del updater — no se ejecutan doble en Strict Mode
+    if (terminado && !beepFiredRef.current) {
+      beepFiredRef.current = true  // evitar doble beep si dos intervals coinciden (Strict Mode dev)
+      clearInterval(id)
+      setTimerCorriendo(false)
+      reproducirBeep(audioCtxRef.current)
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+    }
   }, 1000)
   return () => clearInterval(id)
 }, [timerCorriendo]) // solo depende de timerCorriendo, no de tiempoRestante
 ```
 
-Nota: el `setInterval` se inicia cuando `timerCorriendo` pasa a `true` y se limpia cuando se desmonta o cuando `timerCorriendo` cambia. El decremento ocurre dentro del updater de `setTiempoRestante` para evitar closures stale.
+Nota: el `setInterval` se inicia cuando `timerCorriendo` pasa a `true` y se limpia cuando se desmonta o cuando `timerCorriendo` cambia. Los side-effects (`reproducirBeep`, `vibrate`) se ejecutan fuera del updater de `setState` para cumplir con el patrón del proyecto y evitar doble ejecución en Strict Mode.
 
 ### Sonido — Web Audio API
 
