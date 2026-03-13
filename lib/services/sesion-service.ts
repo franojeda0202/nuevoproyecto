@@ -164,7 +164,7 @@ export async function obtenerSesionActiva(
     // Cargar sesión con nombre del día
     const { data: sesion, error: sesionError } = await supabase
       .from('sesiones')
-      .select('id, dia_id, user_id, finalizada_at, rutina_dias(nombre_dia)')
+      .select('id, dia_id, user_id, iniciada_at, finalizada_at, rutina_dias(nombre_dia)')
       .eq('id', sesionId)
       .eq('user_id', userId)   // ← NUEVO
       .single()
@@ -266,6 +266,7 @@ export async function obtenerSesionActiva(
       data: {
         id: sesionId,
         dia_nombre: diaNombre,
+        iniciada_at: sesion.iniciada_at,
         finalizada_at: sesion.finalizada_at,
         ejercicios: ejerciciosConSeries,
       },

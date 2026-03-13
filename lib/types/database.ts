@@ -221,6 +221,7 @@ export interface EjercicioConSeries {
 export interface SesionActiva {
   id: string
   dia_nombre: string
+  iniciada_at: string
   finalizada_at: string | null
   ejercicios: EjercicioConSeries[]
 }
