@@ -14,6 +14,16 @@ import {
 import { SesionActiva } from '@/lib/types/database'
 import SerieRow from '@/app/components/sesion/SerieRow'
 
+function formatearTiempo(segundos: number): string {
+  const h = Math.floor(segundos / 3600)
+  const m = Math.floor((segundos % 3600) / 60)
+  const s = segundos % 60
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
 export default function SesionActivaPage() {
   const params = useParams()
   const sesionId = params.sesionId as string
@@ -24,6 +34,7 @@ export default function SesionActivaPage() {
   const [sesion, setSesion] = useState<SesionActiva | null>(null)
   const [loading, setLoading] = useState(true)
   const [finalizando, setFinalizando] = useState(false)
+  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0) // segundos
 
   useEffect(() => {
     if (loadingAuth) return
@@ -39,6 +50,15 @@ export default function SesionActivaPage() {
       setLoading(false)
     })
   }, [loadingAuth, authenticated, sesionId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!sesion?.iniciada_at) return
+    const inicio = new Date(sesion.iniciada_at).getTime()
+    const tick = () => setTiempoTranscurrido(Math.floor((Date.now() - inicio) / 1000))
+    tick() // calcular inmediatamente sin esperar 1 segundo
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [sesion?.iniciada_at])
 
   const handlePesoChange = (serieId: string, ejId: string, value: string) => {
     setSesion(prev => {
@@ -177,6 +197,15 @@ export default function SesionActivaPage() {
 
   return (
     <AppLayout>
+
+    {/* Badge cronómetro de sesión */}
+    {sesion && (
+      <div className="fixed top-4 right-4 z-40 flex items-center gap-1.5 bg-neutral-900 text-yellow-500 rounded-full px-3 py-1.5 text-sm font-bold tabular-nums shadow-lg pointer-events-none">
+        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse flex-shrink-0" />
+        {formatearTiempo(tiempoTranscurrido)}
+      </div>
+    )}
+
     <div className="min-h-screen app-page-bg p-4 md:p-8 pb-28">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
