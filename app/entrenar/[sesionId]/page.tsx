@@ -227,6 +227,7 @@ export default function SesionActivaPage() {
   }
 
   const handleTimerCancelar = () => {
+    beepFiredRef.current = false
     setTiempoRestante(0)
     setTiempoTotal(0)
     setTimerCorriendo(false)
