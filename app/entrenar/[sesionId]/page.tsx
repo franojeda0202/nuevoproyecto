@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import toast from 'react-hot-toast'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -13,6 +13,14 @@ import {
 } from '@/lib/services/sesion-service'
 import { SesionActiva } from '@/lib/types/database'
 import SerieRow from '@/app/components/sesion/SerieRow'
+import TemporizadorPanel from '@/app/components/sesion/TemporizadorPanel'
+import { reproducirBeep } from '@/lib/utils/audio'
+
+function formatearCountdown(segundos: number): string {
+  const m = Math.floor(segundos / 60)
+  const s = segundos % 60
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 function formatearTiempo(segundos: number): string {
   const h = Math.floor(segundos / 3600)
@@ -35,6 +43,14 @@ export default function SesionActivaPage() {
   const [loading, setLoading] = useState(true)
   const [finalizando, setFinalizando] = useState(false)
   const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0) // segundos
+
+  // Temporizador de descanso
+  const [panelOpen, setPanelOpen] = useState(false)
+  const [tiempoRestante, setTiempoRestante] = useState(0)
+  const [tiempoTotal, setTiempoTotal] = useState(0)
+  const [timerCorriendo, setTimerCorriendo] = useState(false)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const beepFiredRef = useRef(false)
 
   useEffect(() => {
     if (loadingAuth) return
@@ -59,6 +75,33 @@ export default function SesionActivaPage() {
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [sesion?.iniciada_at])
+
+  useEffect(() => {
+    if (!timerCorriendo || tiempoRestante <= 0) return
+
+    const id = setInterval(() => {
+      let terminado = false
+
+      setTiempoRestante(prev => {
+        if (prev <= 1) {
+          terminado = true
+          return 0
+        }
+        return prev - 1
+      })
+
+      // Side-effects FUERA del updater para evitar doble ejecución en Strict Mode
+      if (terminado && !beepFiredRef.current) {
+        beepFiredRef.current = true
+        clearInterval(id)
+        setTimerCorriendo(false)
+        reproducirBeep(audioCtxRef.current)
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+      }
+    }, 1000)
+
+    return () => clearInterval(id)
+  }, [timerCorriendo]) // solo depende de timerCorriendo, no de tiempoRestante
 
   const handlePesoChange = (serieId: string, ejId: string, value: string) => {
     setSesion(prev => {
@@ -159,6 +202,34 @@ export default function SesionActivaPage() {
       return
     }
     router.push('/rutinas')
+  }
+
+  const handleTimerStart = (segundos: number) => {
+    // Crear/desbloquear AudioContext en este gesto del usuario (requisito iOS/Android)
+    try {
+      if (!audioCtxRef.current) {
+        const AudioCtx =
+          window.AudioContext ??
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+        audioCtxRef.current = new AudioCtx()
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume()
+      }
+    } catch {
+      // Sin sonido en este navegador — el timer funciona igual
+    }
+    beepFiredRef.current = false
+    setTiempoRestante(segundos)
+    setTiempoTotal(segundos)
+    setTimerCorriendo(true)
+    setPanelOpen(false)
+  }
+
+  const handleTimerCancelar = () => {
+    setTiempoRestante(0)
+    setTiempoTotal(0)
+    setTimerCorriendo(false)
   }
 
   if (loadingAuth || loading) {
@@ -273,20 +344,52 @@ export default function SesionActivaPage() {
         </div>
       </div>
 
-      {/* Botón finalizar sticky */}
+      {/* Barra inferior sticky */}
       <div className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-200">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-lg mx-auto flex gap-3 items-center">
+
+          {/* Botón temporizador */}
+          <button
+            type="button"
+            onClick={() => setPanelOpen(prev => !prev)}
+            className="w-12 h-12 flex-shrink-0 bg-neutral-900 text-white rounded-xl flex items-center justify-center hover:bg-neutral-800 transition-all duration-200"
+            aria-label="Abrir temporizador de descanso"
+          >
+            {timerCorriendo ? (
+              <span className="text-yellow-500 text-sm font-bold tabular-nums animate-pulse">
+                {formatearCountdown(tiempoRestante)}
+              </span>
+            ) : (
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 3" />
+                <path d="M9 2h6" />
+              </svg>
+            )}
+          </button>
+
+          {/* Botón finalizar */}
           <button
             type="button"
             onClick={handleFinalizar}
             disabled={finalizando}
-            className="w-full h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 active:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-900/10 flex items-center justify-center"
+            className="flex-1 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 active:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-900/10 flex items-center justify-center"
           >
             {finalizando ? 'Finalizando...' : 'Finalizar sesión'}
           </button>
+
         </div>
       </div>
     </div>
+    <TemporizadorPanel
+      isOpen={panelOpen}
+      onClose={() => setPanelOpen(false)}
+      tiempoRestante={tiempoRestante}
+      tiempoTotal={tiempoTotal}
+      corriendo={timerCorriendo}
+      onStart={handleTimerStart}
+      onCancelar={handleTimerCancelar}
+    />
     </AppLayout>
   )
 }
