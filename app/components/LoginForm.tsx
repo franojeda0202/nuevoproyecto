@@ -89,20 +89,16 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   }
 
   const handleForgotPassword = async () => {
-    setLoading(true)
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/auth/reset-password',
-      })
-      if (resetError) {
-        setError('Ocurrió un error. Intenta nuevamente.')
-        return
-      }
-      // Mostrar mensaje genérico independientemente de si el email existe
-      setMessage('Si ese email está registrado, recibirás las instrucciones en breve.')
-    } finally {
-      setLoading(false)
+    // handleSubmit es dueño del estado loading — no lo tocamos aquí
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/auth/reset-password',
+    })
+    if (resetError) {
+      setError('Ocurrió un error. Intenta nuevamente.')
+      return
     }
+    // Mostrar mensaje genérico independientemente de si el email existe
+    setMessage('Si ese email está registrado, recibirás las instrucciones en breve.')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
