@@ -1,26 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { validatePassword } from '@/lib/utils/validaciones'
 
 type AuthMode = 'login' | 'signup'
-
-// Función para validar contraseña
-const validatePassword = (password: string): { valid: boolean; message: string } => {
-  if (password.length < 6) {
-    return { valid: false, message: 'La contraseña debe tener al menos 6 caracteres' }
-  }
-  
-  if (!/[A-Z]/.test(password)) {
-    return { valid: false, message: 'La contraseña debe contener al menos una mayúscula' }
-  }
-  
-  if (!/[0-9]/.test(password)) {
-    return { valid: false, message: 'La contraseña debe contener al menos un número' }
-  }
-  
-  return { valid: true, message: '' }
-}
 
 // Función para traducir errores de Supabase
 const translateError = (error: unknown): string => {
@@ -80,7 +64,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [message, setMessage] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newPassword = e.target.value
