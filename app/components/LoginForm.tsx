@@ -296,6 +296,14 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
                   ← Volver al login
                 </button>
 
+                {/* Heading — solo mobile (desktop usa el bloque hidden md:block) */}
+                <div className="md:hidden">
+                  <h2 className="text-3xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+                    Recuperar contraseña
+                  </h2>
+                  <div className="h-0.5 w-10 bg-yellow-500 rounded-full" />
+                </div>
+
                 {/* Descripción */}
                 <p className="text-slate-600 text-sm">
                   Ingresa tu email y te enviamos un link para restablecer tu contraseña.
