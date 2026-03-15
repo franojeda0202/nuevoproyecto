@@ -15,6 +15,7 @@ import { SesionActiva } from '@/lib/types/database'
 import SerieRow from '@/app/components/sesion/SerieRow'
 import TemporizadorPanel from '@/app/components/sesion/TemporizadorPanel'
 import { reproducirBeep } from '@/lib/utils/audio'
+import { trackEvent } from '@/lib/analytics'
 
 function formatearCountdown(segundos: number): string {
   const m = Math.floor(segundos / 60)
@@ -224,6 +225,7 @@ export default function SesionActivaPage() {
     setTiempoTotal(segundos)
     setTimerCorriendo(true)
     setPanelOpen(false)
+    trackEvent('temporizador_iniciado', { duracion_segundos: segundos })
   }
 
   const handleTimerCancelar = () => {
