@@ -255,3 +255,39 @@ export interface SesionDetalle {
   finalizada_at: string
   ejercicios: EjercicioDetalle[]
 }
+
+// ============================================
+// Tipos para Métricas
+// ============================================
+
+export interface MetricasResumen {
+  entrenamientosEsteMes: number
+  entrenamientosMesPasado: number
+  rachaActual: number           // semanas consecutivas con ≥1 sesión
+  duracionPromedioMinutos: number | null
+  porcentajeSeriesCompletadas: number | null  // 0-100
+  diasEntrenadosEsteMes: string[]  // ISO date strings "YYYY-MM-DD"
+}
+
+// Retorno del servicio (sin nombre — el caller lo combina con EjercicioRutinaActiva)
+export interface PRejercicio {
+  ejercicioId: string
+  pesoKg: number | null
+  repeticiones: number | null
+}
+
+// Tipo combinado para la UI (merge de PRejercicio + EjercicioRutinaActiva)
+export interface PRejercicioDisplay {
+  ejercicioId: string
+  nombre: string
+  pesoKg: number | null
+  repeticiones: number | null
+  esPinned: boolean  // true si viene de localStorage (no del default por frecuencia)
+}
+
+export interface EjercicioRutinaActiva {
+  ejercicioId: string
+  nombre: string
+  esCompuesto: boolean
+  frecuencia: number  // cuántos días de la rutina incluyen este ejercicio
+}
