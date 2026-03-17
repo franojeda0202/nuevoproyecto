@@ -157,6 +157,62 @@ export default function SesionActivaPage() {
     }
   }, [supabase, sesionId])
 
+  // Al salir del campo peso: guarda la serie actual y auto-completa las siguientes vacías
+  const handlePesoBlur = useCallback((serieId: string, ejId: string) => {
+    type SerieGuardar = { id: string; peso_kg: string; repeticiones: string }
+    let toSave: SerieGuardar[] | null = null
+
+    setSesion(prev => {
+      if (!prev) return prev
+      const ejIdx = prev.ejercicios.findIndex(e => e.rutina_ejercicio_id === ejId)
+      if (ejIdx === -1) return prev
+
+      const ej = prev.ejercicios[ejIdx]
+      const currentIdx = ej.series.findIndex(s => s.id === serieId)
+      if (currentIdx === -1) return prev
+
+      const current = ej.series[currentIdx]
+      const saves: Array<{ id: string; peso_kg: string; repeticiones: string }> = [
+        { id: serieId, peso_kg: current.peso_kg, repeticiones: current.repeticiones },
+      ]
+
+      // Sin peso: solo guardar, sin auto-completar
+      if (!current.peso_kg) {
+        toSave = saves
+        return prev
+      }
+
+      // Auto-completar series posteriores que estén vacías
+      let changed = false
+      const newSeries = ej.series.map((s, idx) => {
+        if (idx <= currentIdx || s.peso_kg !== '') return s
+        changed = true
+        saves.push({ id: s.id, peso_kg: current.peso_kg, repeticiones: s.repeticiones })
+        return { ...s, peso_kg: current.peso_kg }
+      })
+
+      toSave = saves
+      if (!changed) return prev
+
+      const newEjercicios = [...prev.ejercicios]
+      newEjercicios[ejIdx] = { ...ej, series: newSeries }
+      return { ...prev, ejercicios: newEjercicios }
+    })
+
+    // Guardar todo fuera del updater — seguro en Strict Mode
+    const saves = toSave as Array<{ id: string; peso_kg: string; repeticiones: string }> | null
+    if (saves) {
+      for (const s of saves) {
+        actualizarSerie(supabase, {
+          id: s.id,
+          sesionId,
+          peso_kg: s.peso_kg ? parseFloat(s.peso_kg) : null,
+          repeticiones: s.repeticiones ? parseInt(s.repeticiones) : null,
+        })
+      }
+    }
+  }, [supabase, sesionId])
+
   const handleToggleCompletada = (serieId: string, ejId: string) => {
     let serieActualizada: { peso_kg: string; repeticiones: string; completada: boolean } | null = null
 
@@ -337,6 +393,7 @@ export default function SesionActivaPage() {
                     completada={serie.completada}
                     onPesoChange={(id, val) => handlePesoChange(id, ej.rutina_ejercicio_id, val)}
                     onRepsChange={(id, val) => handleRepsChange(id, ej.rutina_ejercicio_id, val)}
+                    onPesoBlur={(id) => handlePesoBlur(id, ej.rutina_ejercicio_id)}
                     onBlur={(id) => handleBlur(id, ej.rutina_ejercicio_id)}
                     onToggleCompletada={(id) => handleToggleCompletada(id, ej.rutina_ejercicio_id)}
                   />

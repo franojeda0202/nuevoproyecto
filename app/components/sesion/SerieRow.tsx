@@ -10,7 +10,8 @@ interface SerieRowProps {
   completada: boolean
   onPesoChange: (serieId: string, value: string) => void
   onRepsChange: (serieId: string, value: string) => void
-  onBlur: (serieId: string) => void
+  onPesoBlur: (serieId: string) => void  // auto-completa series vacías del mismo ejercicio
+  onBlur: (serieId: string) => void      // solo guarda (reps y otros campos)
   onToggleCompletada: (serieId: string) => void
 }
 
@@ -24,6 +25,7 @@ export default function SerieRow({
   completada,
   onPesoChange,
   onRepsChange,
+  onPesoBlur,
   onBlur,
   onToggleCompletada,
 }: SerieRowProps) {
@@ -45,7 +47,7 @@ export default function SerieRow({
         min="0"
         value={pesoActual}
         onChange={(e) => onPesoChange(serieId, e.target.value)}
-        onBlur={() => onBlur(serieId)}
+        onBlur={() => onPesoBlur(serieId)}
         placeholder={pesoPrevio !== null ? String(pesoPrevio) : '—'}
         className="w-20 px-2 py-2 text-center text-sm font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
       />
