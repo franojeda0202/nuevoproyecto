@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/hooks'
 import { obtenerHistorialSesiones, eliminarSesion } from '@/lib/services/sesion-service'
 import { SesionResumen } from '@/lib/types/database'
 import AppLayout from '@/app/components/AppLayout'
+import MetricasTab from '@/app/components/metricas/MetricasTab'
 import toast from 'react-hot-toast'
 
 function formatearFecha(iso: string): string {
@@ -25,6 +26,7 @@ export default function EntrenamientoPage() {
   const [menuAbierto, setMenuAbierto] = useState<string | null>(null)
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null)
   const [eliminando, setEliminando] = useState<string | null>(null)
+  const [tabActivo, setTabActivo] = useState<'historial' | 'metricas'>('historial')
 
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -101,26 +103,57 @@ export default function EntrenamientoPage() {
       <div className="min-h-screen app-page-bg p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div className="mb-8 flex items-end justify-between">
-            <div>
-              <h1 className="text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
-                Entrenamientos
-              </h1>
-              <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
+          <div className="mb-6">
+            <div className="flex items-end justify-between mb-4">
+              <div>
+                <h1 className="text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
+                  Entrenamientos
+                </h1>
+                <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
+              </div>
+              {tabActivo === 'historial' && sesiones.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => router.push('/entrenar')}
+                  className="flex-shrink-0 px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold text-base hover:bg-yellow-400 transition-all"
+                >
+                  + Entrenar
+                </button>
+              )}
             </div>
-            {sesiones.length > 0 && (
+
+            {/* Tabs */}
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => router.push('/entrenar')}
-                className="flex-shrink-0 px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold text-base hover:bg-yellow-400 transition-all"
+                onClick={() => setTabActivo('historial')}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  tabActivo === 'historial'
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
               >
-                + Entrenar
+                Historial
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => setTabActivo('metricas')}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  tabActivo === 'metricas'
+                    ? 'bg-yellow-500 text-black'
+                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                Métricas
+              </button>
+            </div>
           </div>
 
-          {/* Lista de sesiones */}
-          {sesiones.length === 0 ? (
+          {/* Contenido por tab */}
+          {tabActivo === 'metricas' ? (
+            <MetricasTab userId={userId!} supabase={supabase} />
+          ) : (
+          sesiones.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-yellow-50 flex items-center justify-center">
                 <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -214,6 +247,7 @@ export default function EntrenamientoPage() {
                 </div>
               ))}
             </div>
+          )
           )}
         </div>
       </div>
