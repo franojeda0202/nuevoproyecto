@@ -129,7 +129,7 @@ export default function EntrenarPage() {
                   disabled={!!creando || !!sesionEnProgreso}
                   className="w-full p-4 bg-white border border-slate-200 rounded-xl text-left hover:border-yellow-400 hover:bg-yellow-50/50 transition-all duration-200 disabled:opacity-50 shadow-sm"
                 >
-                  <p className="font-semibold text-slate-900">{dia.nombre_dia}</p>
+                  <p className="font-semibold text-slate-900">Día {dia.orden} — {dia.nombre_dia}</p>
                   <p className="text-sm text-slate-500 mt-0.5">
                     {dia.ejercicios.length} ejercicio{dia.ejercicios.length !== 1 ? 's' : ''}
                   </p>

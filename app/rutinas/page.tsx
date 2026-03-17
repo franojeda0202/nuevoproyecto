@@ -533,7 +533,7 @@ export default function RutinasPage() {
                   <div className="pb-2 border-b border-slate-200 flex items-center gap-2">
                     <span className="w-1.5 h-6 bg-yellow-500 rounded-full" />
                     <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                      {dia.nombre_dia}
+                      Día {dia.orden} — {dia.nombre_dia}
                     </h3>
                   </div>
                   

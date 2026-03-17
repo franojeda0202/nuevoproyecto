@@ -120,7 +120,7 @@ export async function obtenerSesionEnProgreso(
   try {
     const { data, error } = await supabase
       .from('sesiones')
-      .select('id, rutina_dias(nombre_dia)')
+      .select('id, rutina_dias(nombre_dia, orden)')
       .eq('user_id', userId)
       .is('finalizada_at', null)
       .order('iniciada_at', { ascending: false })
@@ -138,7 +138,10 @@ export async function obtenerSesionEnProgreso(
       success: true,
       data: {
         sesionId: data.id,
-        diaNombre: (data.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? '',
+        diaNombre: (() => {
+          const rd = data.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
+          return rd ? `Día ${rd.orden} — ${rd.nombre_dia}` : ''
+        })(),
       },
     }
   } catch (err) {
@@ -164,7 +167,7 @@ export async function obtenerSesionActiva(
     // Cargar sesión con nombre del día
     const { data: sesion, error: sesionError } = await supabase
       .from('sesiones')
-      .select('id, dia_id, user_id, iniciada_at, finalizada_at, rutina_dias(nombre_dia)')
+      .select('id, dia_id, user_id, iniciada_at, finalizada_at, rutina_dias(nombre_dia, orden)')
       .eq('id', sesionId)
       .eq('user_id', userId)   // ← NUEVO
       .single()
@@ -173,7 +176,8 @@ export async function obtenerSesionActiva(
       return { success: false, error: 'Sesión no encontrada' }
     }
 
-    const diaNombre = (sesion.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? ''
+    const rutinaDia = sesion.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
+    const diaNombre = rutinaDia ? `Día ${rutinaDia.orden} — ${rutinaDia.nombre_dia}` : ''
 
     // Cargar ejercicios del día y series actuales en paralelo
     const [ejResult, seriesResult] = await Promise.all([
@@ -363,7 +367,7 @@ export async function obtenerHistorialSesiones(
   try {
     const { data: sesiones, error } = await supabase
       .from('sesiones')
-      .select('id, finalizada_at, rutina_dias(nombre_dia)')
+      .select('id, finalizada_at, rutina_dias(nombre_dia, orden)')
       .eq('user_id', userId)
       .not('finalizada_at', 'is', null)
       .order('finalizada_at', { ascending: false })
@@ -393,7 +397,10 @@ export async function obtenerHistorialSesiones(
 
     const resumen: SesionResumen[] = sesiones.map(s => ({
       id: s.id,
-      dia_nombre: (s.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? '',
+      dia_nombre: (() => {
+        const rd = s.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
+        return rd ? `Día ${rd.orden} — ${rd.nombre_dia}` : ''
+      })(),
       finalizada_at: s.finalizada_at as string,
       series_completadas: conteoMap[s.id] || 0,
     }))
@@ -419,7 +426,7 @@ export async function obtenerDetalleSesion(
     // Sesión + nombre del día
     const { data: sesion, error: sesionError } = await supabase
       .from('sesiones')
-      .select('id, dia_id, finalizada_at, rutina_dias(nombre_dia)')
+      .select('id, dia_id, finalizada_at, rutina_dias(nombre_dia, orden)')
       .eq('id', sesionId)
       .eq('user_id', userId)             // ← NUEVO
       .not('finalizada_at', 'is', null)
@@ -429,7 +436,8 @@ export async function obtenerDetalleSesion(
       return { success: false, error: 'Sesión no encontrada' }
     }
 
-    const diaNombre = (sesion.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? ''
+    const rutinaDia = sesion.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
+    const diaNombre = rutinaDia ? `Día ${rutinaDia.orden} — ${rutinaDia.nombre_dia}` : ''
 
     // Ejercicios del día + series de la sesión en paralelo
     const [ejResult, seriesResult] = await Promise.all([
