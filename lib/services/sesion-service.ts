@@ -32,7 +32,7 @@ export async function crearSesion(
   }
 
   try {
-    // Verificar que el día pertenece a la rutina (defense-in-depth)
+    // Verificar que el día pertenece a la rutina y cargar sus ejercicios antes de crear la sesión
     const { data: diaValido, error: diaError } = await supabase
       .from('rutina_dias')
       .select('id')
@@ -42,6 +42,21 @@ export async function crearSesion(
 
     if (diaError || !diaValido) {
       return { success: false, error: 'Día no encontrado en la rutina' }
+    }
+
+    // Cargar ejercicios antes de crear la sesión — si el día no tiene ejercicios, fallar sin dejar sesión huérfana
+    const { data: ejercicios, error: ejError } = await supabase
+      .from('rutina_ejercicios')
+      .select('id, series, orden')
+      .eq('dia_id', params.diaId)
+      .order('orden', { ascending: true })
+
+    if (ejError || !ejercicios) {
+      return { success: false, error: 'Error al cargar ejercicios del día' }
+    }
+
+    if (ejercicios.length === 0) {
+      return { success: false, error: 'Este día no tiene ejercicios. Agregá al menos uno antes de entrenar.' }
     }
 
     // Crear la sesión
@@ -64,20 +79,8 @@ export async function crearSesion(
       return { success: false, error: 'Error al crear la sesión' }
     }
 
-    // Cargar ejercicios del día para crear las series
-    const { data: ejercicios, error: ejError } = await supabase
-      .from('rutina_ejercicios')
-      .select('id, series, orden')
-      .eq('dia_id', params.diaId)
-      .order('orden', { ascending: true })
-
-    if (ejError || !ejercicios) {
-      // Limpiar la sesión creada
-      await supabase.from('sesiones').delete().eq('id', sesion.id)
-      return { success: false, error: 'Error al cargar ejercicios del día' }
-    }
-
     // Crear filas de sesion_series: una por ejercicio × número de series
+    // (ejercicios ya fue cargado y validado antes de crear la sesión)
     const seriesRows = ejercicios.flatMap(ej =>
       Array.from({ length: ej.series }, (_, i) => ({
         sesion_id: sesion.id,
@@ -371,6 +374,7 @@ export async function obtenerHistorialSesiones(
       .eq('user_id', userId)
       .not('finalizada_at', 'is', null)
       .order('finalizada_at', { ascending: false })
+      .limit(50) // evitar superar el límite de 1000 filas de Supabase en la query de series que sigue
 
     if (error) {
       console.error('Error obteniendo historial:', error)
