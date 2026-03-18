@@ -51,7 +51,9 @@ function calcularRacha(fechasFinalizadas: string[]): number {
       // La semana actual sin entrenamiento no rompe la racha (es la primera iteración)
       if (primeraIteracion) {
         // Avanzar a la semana anterior sin sumar racha
-        semanaActual = new Date(semanaActual.getTime() - 7 * 24 * 60 * 60 * 1000)
+        const prev = new Date(semanaActual)
+        prev.setDate(prev.getDate() - 7)
+        semanaActual = prev
         primeraIteracion = false
         // Verificar si la semana anterior tampoco tiene datos → racha = 0
         if (!semanasEntrenadas.has(semanaActual.getTime())) return 0
@@ -63,7 +65,9 @@ function calcularRacha(fechasFinalizadas: string[]): number {
 
     racha++
     primeraIteracion = false
-    semanaActual = new Date(semanaActual.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const prevSemana = new Date(semanaActual)
+    prevSemana.setDate(prevSemana.getDate() - 7)
+    semanaActual = prevSemana
   }
 
   return racha
