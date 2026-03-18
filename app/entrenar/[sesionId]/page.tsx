@@ -77,32 +77,27 @@ export default function SesionActivaPage() {
     return () => clearInterval(id)
   }, [sesion?.iniciada_at])
 
+  // Decrementa el contador cada segundo mientras el timer corre
   useEffect(() => {
     if (!timerCorriendo || tiempoRestante <= 0) return
-
     const id = setInterval(() => {
-      let terminado = false
-
-      setTiempoRestante(prev => {
-        if (prev <= 1) {
-          terminado = true
-          return 0
-        }
-        return prev - 1
-      })
-
-      // Side-effects FUERA del updater para evitar doble ejecución en Strict Mode
-      if (terminado && !beepFiredRef.current) {
-        beepFiredRef.current = true
-        clearInterval(id)
-        setTimerCorriendo(false)
-        reproducirBeep(audioCtxRef.current)
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200])
-      }
+      setTiempoRestante(prev => (prev <= 1 ? 0 : prev - 1))
     }, 1000)
-
     return () => clearInterval(id)
   }, [timerCorriendo]) // solo depende de timerCorriendo, no de tiempoRestante
+
+  // Detecta cuando el timer llegó a 0 y dispara beep + vibración
+  // Separado del interval porque el updater de setState es diferido en React 18 —
+  // no se puede leer el resultado del updater sincrónicamente dentro del setInterval callback
+  useEffect(() => {
+    if (tiempoRestante !== 0 || !timerCorriendo) return
+    setTimerCorriendo(false)
+    if (!beepFiredRef.current) {
+      beepFiredRef.current = true
+      reproducirBeep(audioCtxRef.current)
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+    }
+  }, [tiempoRestante, timerCorriendo])
 
   const handlePesoChange = (serieId: string, ejId: string, value: string) => {
     setSesion(prev => {
@@ -235,18 +230,17 @@ export default function SesionActivaPage() {
       return newSesion
     })
 
-    // Auto-save del toggle (después del setState)
-    setTimeout(() => {
-      if (serieActualizada) {
-        actualizarSerie(supabase, {
-          id: serieId,
-          sesionId,
-          peso_kg: serieActualizada.peso_kg ? parseFloat(serieActualizada.peso_kg) : null,
-          repeticiones: serieActualizada.repeticiones ? parseInt(serieActualizada.repeticiones) : null,
-          completada: serieActualizada.completada,
-        })
-      }
-    }, 0)
+    // Auto-save inmediato — mismo patrón que handleBlur (sin setTimeout)
+    const guardada = serieActualizada as { peso_kg: string; repeticiones: string; completada: boolean } | null
+    if (guardada) {
+      actualizarSerie(supabase, {
+        id: serieId,
+        sesionId,
+        peso_kg: guardada.peso_kg ? parseFloat(guardada.peso_kg) : null,
+        repeticiones: guardada.repeticiones ? parseInt(guardada.repeticiones) : null,
+        completada: guardada.completada,
+      })
+    }
   }
 
   const handleFinalizar = async () => {

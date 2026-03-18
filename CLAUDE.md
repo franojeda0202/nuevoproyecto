@@ -106,6 +106,36 @@ Without `useMemo`, `createClient()` returns a new object each render → unstabl
 
 Never call async functions (DB writes, fetch) inside `setState(prev => ...)` updaters — React Strict Mode invokes them twice, causing double writes. Pattern: capture data in an external variable inside the updater, call the service outside. See `handleBlur` and `handleToggleCompletada` in `app/entrenar/[sesionId]/page.tsx`.
 
+**TypeScript note:** Variables mutated inside setState updaters are inferred as `never` by TypeScript after the `if (variable)` check. Use an explicit cast: `const casted = variable as Type | null`.
+
+**Do NOT use `setTimeout` to read variables captured in setState updaters.** React 18 may batch state updates, so there is no guarantee the updater has run before `setTimeout` fires. Read the captured variable synchronously immediately after the `setSesion(...)` call.
+
+### Reacting to state changes from intervals
+
+`setInterval` callbacks cannot reliably read the result of a `setState` updater — in React 18 the updater is deferred, so an external variable mutated inside the updater may still be the initial value when the interval callback continues executing. **Never detect "done" conditions inside a `setInterval` callback by mutating a variable inside `setState`.** Instead, use a separate `useEffect` that declares the target state as a dependency:
+
+```ts
+// ✅ Correct: detect timer end in a dedicated useEffect
+useEffect(() => {
+  if (tiempoRestante !== 0 || !timerCorriendo) return
+  setTimerCorriendo(false)
+  // fire side-effects here
+}, [tiempoRestante, timerCorriendo])
+
+// The interval only decrements — no side-effects
+useEffect(() => {
+  if (!timerCorriendo) return
+  const id = setInterval(() => {
+    setTiempoRestante(prev => (prev <= 1 ? 0 : prev - 1))
+  }, 1000)
+  return () => clearInterval(id)
+}, [timerCorriendo])
+```
+
+### Supabase row limit
+
+Supabase JS v2 returns a maximum of **1000 rows** by default. Queries using `.in('column', largeArray)` (e.g., fetching `sesion_series` for all historical sessions) will silently truncate results if the total exceeds 1000 rows. Any query that could scale beyond that needs explicit `.range()` pagination or an RPC (stored function) with server-side aggregation. Current known risk: `obtenerHistorialSesiones` in `sesion-service.ts`.
+
 - **Language:** All UI text, variable names, types, and comments are in Spanish
 - **Client vs Server components:** Pages and interactive components use `'use client'`; the root layout is a server component
 - **Path alias:** `@/*` maps to the project root (e.g., `@/lib/hooks`)
