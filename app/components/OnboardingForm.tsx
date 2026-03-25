@@ -1,25 +1,36 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { obtenerPerfil, guardarPerfil } from '@/lib/services/perfil-service'
 
 export interface OnboardingData {
-  daysPerWeek: number
-  gender: 'male' | 'female' | 'other'
-  location: 'gym' | 'home'
-  muscleFocus?: string // Opcional: preferencia de grupo muscular
+  diasSemana: number
+  objetivo: 'musculo' | 'fitness' | 'fuerza'
+  nivel: 'principiante' | 'intermedio' | 'avanzado'
+  equipamiento: 'bodyweight' | 'mancuernas' | 'barras' | 'gym_completo'
+  duracionMinutos: 30 | 45 | 60 | 90
+  focoMuscular: string
+  genero: 'masculino' | 'femenino' | null
 }
 
 interface OnboardingFormProps {
   onSubmit: (data: OnboardingData) => void
+  supabase: SupabaseClient
+  userId: string
 }
 
-interface FormErrors {
-  daysPerWeek?: string
-  gender?: string
-  location?: string
+const DEFAULTS: OnboardingData = {
+  diasSemana: 3,
+  objetivo: 'musculo',
+  nivel: 'principiante',
+  equipamiento: 'gym_completo',
+  duracionMinutos: 60,
+  focoMuscular: '',
+  genero: null,
 }
 
-const MUSCLE_FOCUS_OPTIONS = [
+const FOCO_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'Sin preferencia' },
   { value: 'pecho', label: 'Pecho' },
   { value: 'espalda', label: 'Espalda' },
@@ -27,98 +38,125 @@ const MUSCLE_FOCUS_OPTIONS = [
   { value: 'brazos', label: 'Brazos' },
   { value: 'piernas', label: 'Piernas' },
   { value: 'gluteos', label: 'Glúteos' },
-  { value: 'core', label: 'Core/Abdominales' },
+  { value: 'core', label: 'Core' },
   { value: 'full_body', label: 'Full Body' },
 ]
 
-export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
-  const [formData, setFormData] = useState<OnboardingData>({
-    daysPerWeek: 3,
-    gender: 'male',
-    location: 'gym',
-    muscleFocus: '',
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [touched, setTouched] = useState<Record<string, boolean>>({})
+function PillGroup({
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  options: { value: string | number | null; label: string }[]
+  value: string | number | null
+  onChange: (v: string | number | null) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={String(opt.value)}
+          type="button"
+          disabled={disabled}
+          onClick={() => onChange(opt.value)}
+          className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${
+            value === opt.value
+              ? 'bg-yellow-500 border-yellow-500 text-black'
+              : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+          } ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
-  // Validar un campo específico
-  const validateField = useCallback((field: keyof OnboardingData, value: unknown): string | undefined => {
-    switch (field) {
-      case 'daysPerWeek':
-        if (!value || (value as number) < 2 || (value as number) > 6) {
-          return 'Selecciona entre 2 y 6 días'
-        }
-        break
-      case 'gender':
-        if (!value || !['male', 'female', 'other'].includes(value as string)) {
-          return 'Selecciona un género'
-        }
-        break
-      case 'location':
-        if (!value || !['gym', 'home'].includes(value as string)) {
-          return 'Selecciona dónde entrenarás'
-        }
-        break
+const OBJETIVO_LABEL: Record<string, string> = {
+  musculo: 'Ganar músculo',
+  fitness: 'Fitness general',
+  fuerza: 'Fuerza',
+}
+const NIVEL_LABEL: Record<string, string> = {
+  principiante: 'Principiante',
+  intermedio: 'Intermedio',
+  avanzado: 'Avanzado',
+}
+const EQUIP_LABEL: Record<string, string> = {
+  bodyweight: 'Bodyweight',
+  mancuernas: 'Mancuernas',
+  barras: 'Barras + rack',
+  gym_completo: 'Gym completo',
+}
+const GENERO_LABEL: Record<string, string> = {
+  masculino: 'Masculino',
+  femenino: 'Femenino',
+}
+
+export default function OnboardingForm({ onSubmit, supabase, userId }: OnboardingFormProps) {
+  const [formData, setFormData] = useState<OnboardingData>(DEFAULTS)
+  const [cargando, setCargando] = useState(true)
+  const [guardando, setGuardando] = useState(false)
+  const [errorPerfil, setErrorPerfil] = useState<string | null>(null)
+
+  // Pre-cargar perfil guardado al montar
+  useEffect(() => {
+    let cancelled = false
+    async function cargar() {
+      const resultado = await obtenerPerfil(supabase, userId)
+      if (cancelled) return
+      if (resultado.success && resultado.data) {
+        const p = resultado.data
+        setFormData(prev => ({
+          ...prev,
+          objetivo: p.objetivo,
+          nivel: p.nivel,
+          equipamiento: p.equipamiento,
+          duracionMinutos: p.duracionMinutos,
+          genero: p.genero,
+        }))
+      }
+      // Si falla, ignorar silenciosamente y mantener defaults
+      setCargando(false)
     }
-    return undefined
-  }, [])
+    cargar()
+    return () => { cancelled = true }
+  }, [supabase, userId])
 
-  // Validar todo el formulario
-  const validateForm = useCallback((): boolean => {
-    const newErrors: FormErrors = {}
-    
-    const daysError = validateField('daysPerWeek', formData.daysPerWeek)
-    if (daysError) newErrors.daysPerWeek = daysError
-    
-    const genderError = validateField('gender', formData.gender)
-    if (genderError) newErrors.gender = genderError
-    
-    const locationError = validateField('location', formData.location)
-    if (locationError) newErrors.location = locationError
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }, [formData, validateField])
+  const set = <K extends keyof OnboardingData>(key: K, value: OnboardingData[K]) =>
+    setFormData(prev => ({ ...prev, [key]: value }))
 
-  // Manejar cambio de campo con validación
-  const handleFieldChange = (field: keyof OnboardingData, value: unknown) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    
-    // Validar solo si el campo ya fue tocado
-    if (touched[field]) {
-      const error = validateField(field, value)
-      setErrors(prev => ({ ...prev, [field]: error }))
-    }
-  }
-
-  // Marcar campo como tocado
-  const handleFieldBlur = (field: keyof OnboardingData) => {
-    setTouched(prev => ({ ...prev, [field]: true }))
-    const error = validateField(field, formData[field])
-    setErrors(prev => ({ ...prev, [field]: error }))
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Marcar todos los campos como tocados
-    setTouched({ daysPerWeek: true, gender: true, location: true })
-    
-    // Validar formulario completo
-    if (validateForm()) {
-      onSubmit(formData)
+    setErrorPerfil(null)
+    setGuardando(true)
+
+    const resultado = await guardarPerfil(supabase, userId, {
+      objetivo: formData.objetivo,
+      nivel: formData.nivel,
+      equipamiento: formData.equipamiento,
+      duracionMinutos: formData.duracionMinutos,
+      genero: formData.genero,
+    })
+
+    setGuardando(false)
+
+    if (!resultado.success) {
+      setErrorPerfil('No se pudo guardar tu perfil. Intenta de nuevo.')
+      return
     }
+
+    onSubmit(formData)
   }
 
-  // Helper para clases de error
-  const getFieldClasses = (field: keyof FormErrors, baseClasses: string) => {
-    const hasError = touched[field] && errors[field]
-    return `${baseClasses} ${hasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''}`
-  }
+  const focoLabel = FOCO_OPTIONS.find(o => o.value === formData.focoMuscular)?.label
 
   return (
     <div className="min-h-screen app-page-bg flex items-center justify-center p-4 md:p-6">
       <div className="w-full max-w-2xl">
+        {/* Header */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-1">
             <svg className="w-10 h-10 text-yellow-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -128,175 +166,191 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
               GymLogic
             </h1>
           </div>
-          <p className="text-slate-500 text-base font-medium mt-3">
-            Tu coach digital personal
-          </p>
+          {cargando ? (
+            <div className="flex items-center justify-center gap-2 mt-3">
+              <div className="w-4 h-4 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-slate-400 text-sm">Cargando tu perfil...</span>
+            </div>
+          ) : (
+            <p className="text-slate-500 text-base font-medium mt-3">Tu coach digital personal</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-8 md:p-10 space-y-8 border border-slate-200/80 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-yellow-500 to-amber-400" />
+
           {/* Días por semana */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
-              ¿Cuántos días puedes entrenar por semana?
+              ¿Cuántos días podés entrenar por semana?
             </label>
-            <select
-              value={formData.daysPerWeek}
-              onChange={(e) => handleFieldChange('daysPerWeek', parseInt(e.target.value))}
-              onBlur={() => handleFieldBlur('daysPerWeek')}
-              className={getFieldClasses('daysPerWeek', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none cursor-pointer')}
-              required
-            >
-              <option value={2}>2 días</option>
-              <option value={3}>3 días</option>
-              <option value={4}>4 días</option>
-              <option value={5}>5 días</option>
-              <option value={6}>6 días</option>
-            </select>
-            {touched.daysPerWeek && errors.daysPerWeek && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.daysPerWeek}
-              </p>
-            )}
+            <PillGroup
+              options={[2, 3, 4, 5, 6].map(n => ({ value: n, label: `${n} días` }))}
+              value={formData.diasSemana}
+              onChange={(v) => set('diasSemana', v as number)}
+              disabled={cargando}
+            />
           </div>
 
-          {/* Género - Desplegable */}
+          {/* Objetivo */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
-              Género
+              ¿Cuál es tu objetivo?
             </label>
-            <select
-              value={formData.gender}
-              onChange={(e) => handleFieldChange('gender', e.target.value as 'male' | 'female' | 'other')}
-              onBlur={() => handleFieldBlur('gender')}
-              className={getFieldClasses('gender', 'w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none cursor-pointer')}
-              required
-            >
-              <option value="male">Masculino</option>
-              <option value="female">Femenino</option>
-              <option value="other">Otro</option>
-            </select>
-            {touched.gender && errors.gender && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.gender}
-              </p>
-            )}
+            <PillGroup
+              options={[
+                { value: 'musculo', label: 'Ganar músculo' },
+                { value: 'fitness', label: 'Fitness general' },
+                { value: 'fuerza', label: 'Fuerza' },
+              ]}
+              value={formData.objetivo}
+              onChange={(v) => set('objetivo', v as OnboardingData['objetivo'])}
+              disabled={cargando}
+            />
           </div>
 
-          {/* Lugar de entrenamiento */}
+          {/* Nivel */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
-              ¿Dónde entrenarás?
+              ¿Cuál es tu nivel de experiencia?
             </label>
-            <div className="grid grid-cols-2 gap-4">
-              <label className={`relative flex items-center justify-center p-4 border-2 rounded-xl transition-all ${
-                'border-gray-400 bg-gray-200 text-gray-500 cursor-not-allowed opacity-60'
-              }`}>
-                <input
-                  type="radio"
-                  name="location"
-                  value="home"
-                  checked={false}
-                  disabled
-                  className="sr-only"
-                />
-                <span className="font-semibold">En casa</span>
-                <span className="absolute -top-2 -right-2 bg-gray-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  Próximamente
-                </span>
-              </label>
-              <label className={`relative flex items-center justify-center p-4 border rounded-xl cursor-pointer transition-all ${
-                formData.location === 'gym' 
-                  ? 'border-yellow-500 bg-yellow-50 text-slate-900'
-                  : touched.location && errors.location
-                    ? 'border-red-500 bg-white text-slate-700'
-                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-              }`}>
-                <input
-                  type="radio"
-                  name="location"
-                  value="gym"
-                  checked={formData.location === 'gym'}
-                  onChange={(e) => handleFieldChange('location', e.target.value as 'gym' | 'home')}
-                  onBlur={() => handleFieldBlur('location')}
-                  className="sr-only"
-                />
-                <span className="font-semibold">Gimnasio</span>
-                {formData.location === 'gym' && (
-                  <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-500 rounded-full" />
-                )}
-              </label>
-            </div>
-            {touched.location && errors.location && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                {errors.location}
-              </p>
-            )}
+            <PillGroup
+              options={[
+                { value: 'principiante', label: 'Principiante' },
+                { value: 'intermedio', label: 'Intermedio' },
+                { value: 'avanzado', label: 'Avanzado' },
+              ]}
+              value={formData.nivel}
+              onChange={(v) => set('nivel', v as OnboardingData['nivel'])}
+              disabled={cargando}
+            />
           </div>
 
-          {/* Preferencia de foco muscular - Desplegable */}
+          {/* Equipamiento */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              ¿Qué equipamiento tenés disponible?
+            </label>
+            <PillGroup
+              options={[
+                { value: 'bodyweight', label: 'Bodyweight' },
+                { value: 'mancuernas', label: 'Mancuernas' },
+                { value: 'barras', label: 'Barras + rack' },
+                { value: 'gym_completo', label: 'Gym completo' },
+              ]}
+              value={formData.equipamiento}
+              onChange={(v) => set('equipamiento', v as OnboardingData['equipamiento'])}
+              disabled={cargando}
+            />
+          </div>
+
+          {/* Duración */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              ¿Cuánto tiempo tenés por sesión?
+            </label>
+            <PillGroup
+              options={[
+                { value: 30, label: '30 min' },
+                { value: 45, label: '45 min' },
+                { value: 60, label: '60 min' },
+                { value: 90, label: '90 min' },
+              ]}
+              value={formData.duracionMinutos}
+              onChange={(v) => set('duracionMinutos', v as OnboardingData['duracionMinutos'])}
+              disabled={cargando}
+            />
+          </div>
+
+          {/* Foco muscular */}
           <div>
             <label className="block text-sm font-semibold text-gray-800 mb-3">
               Preferencia de foco muscular <span className="text-gray-500 font-normal">(Opcional)</span>
             </label>
-            <select
-              value={formData.muscleFocus || ''}
-              onChange={(e) => handleFieldChange('muscleFocus', e.target.value || undefined)}
-              className="w-full px-4 py-3.5 h-12 border border-slate-200 rounded-xl bg-white text-slate-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none cursor-pointer"
-            >
-              {MUSCLE_FOCUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <p className="mt-2 text-sm text-gray-500">
-              Selecciona un área específica o déjalo sin preferencia para entrenamiento completo
-            </p>
+            <PillGroup
+              options={FOCO_OPTIONS}
+              value={formData.focoMuscular}
+              onChange={(v) => set('focoMuscular', v as string)}
+              disabled={cargando}
+            />
           </div>
 
-          {/* Resumen de configuración */}
+          {/* Género */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-800 mb-3">
+              Género <span className="text-gray-500 font-normal">(Opcional)</span>
+            </label>
+            <PillGroup
+              options={[
+                { value: 'masculino', label: 'Masculino' },
+                { value: 'femenino', label: 'Femenino' },
+                { value: null, label: 'Prefiero no decir' },
+              ]}
+              value={formData.genero}
+              onChange={(v) => set('genero', v as OnboardingData['genero'])}
+              disabled={cargando}
+            />
+            <div className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <p className="text-xs font-semibold text-slate-600 mb-1">¿Por qué te preguntamos esto?</p>
+              <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
+                <li>La ciencia indica que las diferencias programáticas son menores de lo que se cree</li>
+                <li>Las mujeres toleran más volumen y se recuperan más rápido entre series</li>
+                <li>Las mujeres responden bien a rep ranges más altos (12–20 reps)</li>
+                <li>Ambos sexos ganan músculo con los mismos movimientos — la diferencia es de preferencia y punto de partida</li>
+                <li>En la práctica, el enfoque femenino suele ser más en tren inferior/glúteos; el masculino en tren superior</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Resumen */}
           <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-200">
             <p className="text-sm font-medium text-gray-700 mb-2">Tu configuración:</p>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
-                {formData.daysPerWeek} días/semana
+                {formData.diasSemana} días/semana
               </span>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800">
-                {formData.gender === 'male' ? 'Masculino' : formData.gender === 'female' ? 'Femenino' : 'Otro'}
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
+                {OBJETIVO_LABEL[formData.objetivo]}
               </span>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
-                {formData.location === 'gym' ? 'Gimnasio' : 'En casa'}
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
+                {NIVEL_LABEL[formData.nivel]}
               </span>
-              {formData.muscleFocus && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
-                  Foco: {MUSCLE_FOCUS_OPTIONS.find(o => o.value === formData.muscleFocus)?.label}
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
+                {EQUIP_LABEL[formData.equipamiento]}
+              </span>
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-700">
+                {formData.duracionMinutos} min
+              </span>
+              {formData.focoMuscular && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-slate-100 text-slate-700">
+                  Foco: {focoLabel}
+                </span>
+              )}
+              {formData.genero && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-slate-100 text-slate-700">
+                  {GENERO_LABEL[formData.genero]}
                 </span>
               )}
             </div>
           </div>
 
+          {/* Error al guardar perfil */}
+          {errorPerfil && (
+            <p className="text-sm text-red-600 text-center">{errorPerfil}</p>
+          )}
+
           <button
             type="submit"
-            className="w-full py-4 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10 flex items-center justify-center gap-2"
+            disabled={cargando || guardando}
+            className="w-full py-4 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span>Generar mi rutina</span>
+            <span>{guardando ? 'Guardando...' : 'Generar mi rutina'}</span>
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </button>
         </form>
 
-        {/* Footer */}
         <p className="text-center text-gray-500 text-sm mt-6">
           Rutinas personalizadas con IA • Powered by GymLogic
         </p>
@@ -304,4 +358,3 @@ export default function OnboardingForm({ onSubmit }: OnboardingFormProps) {
     </div>
   )
 }
-
