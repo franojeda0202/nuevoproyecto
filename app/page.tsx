@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import OnboardingForm, { OnboardingData } from './components/OnboardingForm'
@@ -19,7 +19,7 @@ const getIsNewRoutine = () => {
 export default function Home() {
   const [submitting, setSubmitting] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   
   // Custom hooks para autenticación y verificación de rutinas
   const { loading, authenticated, userId, logout } = useAuth()
@@ -84,12 +84,13 @@ export default function Home() {
       // 2. Llamar a la API de generación de rutinas
       const requestBody = {
         user_id: userId,
-        config: {
-          frecuencia: data.daysPerWeek,
-          enfoque: data.muscleFocus || 'full_body',
-          genero: data.gender,
-          ubicacion: data.location
-        }
+        diasSemana: data.diasSemana,
+        objetivo: data.objetivo,
+        nivel: data.nivel,
+        equipamiento: data.equipamiento,
+        duracionMinutos: data.duracionMinutos,
+        focoMuscular: data.focoMuscular,
+        genero: data.genero,
       }
 
       let response
@@ -123,10 +124,13 @@ export default function Home() {
       // 4. La rutina ya está guardada en Supabase, redirigir directamente
       if (routineData) {
         trackEvent('rutina_generada', {
-          dias: data.daysPerWeek,
-          objetivo: data.muscleFocus || 'full_body',
-          genero: data.gender,
-          ubicacion: data.location,
+          dias: data.diasSemana,
+          objetivo: data.objetivo,
+          nivel: data.nivel,
+          equipamiento: data.equipamiento,
+          duracionMinutos: data.duracionMinutos,
+          focoMuscular: data.focoMuscular || 'sin preferencia',
+          genero: data.genero || 'no especificado',
         })
         toast.success('¡Rutina generada exitosamente!')
         router.push('/rutinas')
@@ -170,7 +174,11 @@ export default function Home() {
           Cerrar Sesión
         </button>
       </div>
-      <OnboardingForm onSubmit={handleFormSubmit} />
+      <OnboardingForm
+        onSubmit={handleFormSubmit}
+        supabase={supabase}
+        userId={userId!}
+      />
     </div>
   )
 }
