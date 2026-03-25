@@ -81,19 +81,28 @@ export interface RutinaCompleta {
   dias: DiaConEjercicios[]
 }
 
-// Tipos para el formulario de onboarding
+// Tipos para el formulario de onboarding y perfil del usuario
 
-export interface OnboardingConfig {
-  frecuencia: number
-  enfoque: string
-  genero: string
-  ubicacion: string
+export interface PerfilUsuario {
+  objetivo: 'musculo' | 'fitness' | 'fuerza'
+  nivel: 'principiante' | 'intermedio' | 'avanzado'
+  equipamiento: 'bodyweight' | 'mancuernas' | 'barras' | 'gym_completo'
+  duracionMinutos: 30 | 45 | 60 | 90
+  genero: 'masculino' | 'femenino' | null
 }
 
+// Body del POST /api/generar-rutina (plano, sin wrapper config)
 export interface GenerarRutinaRequest {
   user_id: string
-  config: OnboardingConfig
+  diasSemana: number
+  objetivo: PerfilUsuario['objetivo']
+  nivel: PerfilUsuario['nivel']
+  equipamiento: PerfilUsuario['equipamiento']
+  duracionMinutos: PerfilUsuario['duracionMinutos']
+  focoMuscular: string  // '' cuando no hay preferencia, nunca undefined
+  genero: PerfilUsuario['genero']
 }
+// Nota: focoMuscular es siempre string (nunca undefined). El form siempre envía '' como mínimo.
 
 // ============================================
 // Tipos para Edición de Rutina
