@@ -20,30 +20,45 @@ const openai = new OpenAI({
 })
 
 const VALORES_VALIDOS = {
-  genero: ['male', 'female', 'other'] as const,
-  ubicacion: ['gym', 'home'] as const,
-  enfoque: ['pecho', 'espalda', 'hombros', 'brazos', 'piernas', 'gluteos', 'core', 'full_body'] as const,
-  frecuencia: { min: 2, max: 6 },
+  objetivo: ['musculo', 'fitness', 'fuerza'] as const,
+  nivel: ['principiante', 'intermedio', 'avanzado'] as const,
+  equipamiento: ['bodyweight', 'mancuernas', 'barras', 'gym_completo'] as const,
+  duracionMinutos: [30, 45, 60, 90] as const,
+  genero: ['masculino', 'femenino'] as const,
+  focoMuscular: ['', 'pecho', 'espalda', 'hombros', 'brazos', 'piernas', 'gluteos', 'core', 'full_body'] as const,
+  diasSemana: { min: 2, max: 6 },
 }
 
-function validarConfig(config: GenerarRutinaRequest['config']): boolean {
+function validarRequest(body: GenerarRutinaRequest): boolean {
   if (
-    typeof config.frecuencia !== 'number' ||
-    config.frecuencia < VALORES_VALIDOS.frecuencia.min ||
-    config.frecuencia > VALORES_VALIDOS.frecuencia.max
+    typeof body.diasSemana !== 'number' ||
+    body.diasSemana < VALORES_VALIDOS.diasSemana.min ||
+    body.diasSemana > VALORES_VALIDOS.diasSemana.max
   ) return false
-  if (config.genero && !(VALORES_VALIDOS.genero as readonly string[]).includes(config.genero)) return false
-  if (config.ubicacion && !(VALORES_VALIDOS.ubicacion as readonly string[]).includes(config.ubicacion)) return false
-  if (config.enfoque && !(VALORES_VALIDOS.enfoque as readonly string[]).includes(config.enfoque)) return false
+  if (!(VALORES_VALIDOS.objetivo as readonly string[]).includes(body.objetivo)) return false
+  if (!(VALORES_VALIDOS.nivel as readonly string[]).includes(body.nivel)) return false
+  if (!(VALORES_VALIDOS.equipamiento as readonly string[]).includes(body.equipamiento)) return false
+  if (!(VALORES_VALIDOS.duracionMinutos as readonly number[]).includes(body.duracionMinutos)) return false
+  if (body.genero !== null && body.genero !== undefined &&
+      !(VALORES_VALIDOS.genero as readonly string[]).includes(body.genero)) return false
+  if (!(VALORES_VALIDOS.focoMuscular as readonly string[]).includes(body.focoMuscular)) return false
   return true
 }
 
-function buildUserPrompt(userId: string, config: GenerarRutinaRequest['config'], ejercicios: unknown[]): string {
+function buildUserPrompt(userId: string, req: GenerarRutinaRequest, ejercicios: unknown[]): string {
   return `Actúa como GymLogic AI. Diseña una rutina de alta optimización biomecánica.
 
 DATOS DEL USUARIO:
 - USER_ID: ${userId}
-- CONFIGURACIÓN: ${JSON.stringify(config)}
+
+PERFIL DEL USUARIO:
+- Objetivo: ${req.objetivo}
+- Nivel de experiencia: ${req.nivel}
+- Equipamiento disponible: ${req.equipamiento}
+- Duración de sesión: ${req.duracionMinutos} minutos
+- Días de entrenamiento: ${req.diasSemana} días/semana
+- Foco muscular: ${req.focoMuscular || 'sin preferencia'}
+- Género: ${req.genero || 'no especificado'}
 
 LISTA DE EJERCICIOS DISPONIBLES (USA SOLO ESTOS IDs):
 ${JSON.stringify(ejercicios)}
@@ -80,9 +95,18 @@ export async function POST(request: NextRequest) {
 
     userId = session.user.id
 
-    // Validar que config exista y tenga la forma esperada
-    const config = body?.config as GenerarRutinaRequest['config'] | undefined
-    if (!config || typeof config !== 'object' || !validarConfig(config)) {
+    // Construir el objeto request y validarlo
+    const req: GenerarRutinaRequest = {
+      user_id: bodyUserId,
+      diasSemana: body?.diasSemana,
+      objetivo: body?.objetivo,
+      nivel: body?.nivel,
+      equipamiento: body?.equipamiento,
+      duracionMinutos: body?.duracionMinutos,
+      focoMuscular: body?.focoMuscular ?? '',
+      genero: body?.genero ?? null,
+    }
+    if (!validarRequest(req)) {
       return NextResponse.json({ error: 'Configuración de rutina inválida' }, { status: 400 })
     }
 
@@ -125,7 +149,7 @@ export async function POST(request: NextRequest) {
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT_RUTINA },
-        { role: 'user', content: buildUserPrompt(userId, config, ejercicios) },
+        { role: 'user', content: buildUserPrompt(userId, req, ejercicios) },
       ],
     })
 
@@ -171,7 +195,7 @@ export async function POST(request: NextRequest) {
       .insert({
         nombre: rutinaGenerada.nombre_rutina,
         user_id: userId,
-        frecuencia: config.frecuencia,
+        frecuencia: req.diasSemana,
       })
       .select('id')
       .single()
