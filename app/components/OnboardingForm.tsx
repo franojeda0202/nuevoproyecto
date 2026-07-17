@@ -233,13 +233,12 @@ export default function OnboardingForm({ onSubmit, supabase, userId }: Onboardin
 
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  Equipamiento
+                  Equipamiento <span className="normal-case font-normal text-slate-400">(próximamente)</span>
                 </label>
                 <SelectWrapper>
                   <select
                     value={formData.equipamiento}
-                    onChange={e => set('equipamiento', e.target.value as OnboardingData['equipamiento'])}
-                    disabled={cargando}
+                    disabled
                     className={SELECT_CLASS}
                   >
                     <option value="bodyweight">Bodyweight</option>
@@ -299,7 +298,6 @@ export default function OnboardingForm({ onSubmit, supabase, userId }: Onboardin
                   <li>Las mujeres toleran más volumen y se recuperan más rápido entre series</li>
                   <li>Las mujeres responden bien a rep ranges más altos (12–20 reps)</li>
                   <li>Ambos sexos ganan músculo con los mismos movimientos — la diferencia es de preferencia y punto de partida</li>
-                  <li>En la práctica, el enfoque femenino suele ser más en tren inferior/glúteos; el masculino en tren superior</li>
                 </ul>
               </div>
             </div>
