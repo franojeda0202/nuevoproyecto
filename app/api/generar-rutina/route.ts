@@ -82,18 +82,20 @@ export async function POST(request: NextRequest) {
 
     // Verificar sesión
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user?.id) {
+    // getUser() valida el token contra Supabase. getSession() solo lee la cookie,
+    // que en el servidor puede venir adulterada o vencida.
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.id) {
       return NextResponse.json(
         { error: 'Debes iniciar sesión para generar una rutina' },
         { status: 401 }
       )
     }
-    if (session.user.id !== bodyUserId) {
+    if (user.id !== bodyUserId) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
     }
 
-    userId = session.user.id
+    userId = user.id
 
     // Construir el objeto request y validarlo
     const req: GenerarRutinaRequest = {
