@@ -36,6 +36,11 @@ Esperar a que Rama sienta la fricción y la cuente. El feedback se registra en
 - **No por ahora:** cargar las notas por ejercicio del coach.
 - **Sí, después de ver la de TBI:** "Ver progreso" por ejercicio. Primero hay que ver qué muestra la app del coach, para hacerlo mejor y no una copia.
 
+## Cómo trabaja el coach de Rama (2026-11-21)
+
+- La rutina cambia cada 4 o 5 meses. La pantalla de rutina es de consulta, no de edición diaria: se ve en modo lectura y editar queda detrás de un botón.
+- Cada 1 o 2 semanas, según el progreso, el coach sube el volumen, casi siempre agregando series. Idea a futuro: registrar esas subidas sin rearmar la rutina (por ejemplo, "semana 3: +1 serie en los compuestos") y mostrarlas en Hoy.
+
 ## En espera hasta tener feedback
 
 Están en `docs/roadmap.md`, pero no se construyen hasta que el uso real diga
