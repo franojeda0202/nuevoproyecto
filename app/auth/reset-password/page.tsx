@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { validatePassword } from '@/lib/utils/validaciones'
+import PasswordInput from '@/app/components/PasswordInput'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -206,8 +207,7 @@ function ResetPasswordForm() {
                   (mín. 6 caracteres, 1 mayúscula, 1 número)
                 </span>
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={handlePasswordBlur}
@@ -227,8 +227,7 @@ function ResetPasswordForm() {
               <label className="block text-sm font-semibold text-gray-800 mb-2">
                 Confirmar contraseña
               </label>
-              <input
-                type="password"
+              <PasswordInput
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 onBlur={handleConfirmBlur}
