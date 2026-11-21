@@ -42,6 +42,10 @@ export const metadata: Metadata = {
 // (y también background_color/theme_color de public/manifest.json).
 export const viewport: Viewport = {
   themeColor: "#f1f5f9",
+  // "cover" hace que iOS informe el margen del indicador de inicio en
+  // env(safe-area-inset-bottom). Sin esto vale 0 y las barras de abajo quedan
+  // metidas debajo de la rayita del iPhone.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

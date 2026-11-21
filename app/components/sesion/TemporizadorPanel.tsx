@@ -60,7 +60,7 @@ export default function TemporizadorPanel({
           <div className="w-10 h-1 bg-slate-200 rounded-full" />
         </div>
 
-        <div className="px-6 pb-8 pt-2">
+        <div className="px-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-2">
           {/* Título */}
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 text-center">
             Descanso
