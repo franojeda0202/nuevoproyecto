@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { EjercicioEditable, Ejercicio } from '@/lib/types/database'
 import { useEjerciciosPool } from '@/lib/hooks'
+import { validarRangos } from '@/lib/utils/rangos-series'
 
 interface EjercicioModalProps {
   isOpen: boolean
@@ -112,8 +113,9 @@ export default function EjercicioModal({
       setError('Las series deben estar entre 1 y 20')
       return
     }
-    if (!repeticiones.trim()) {
-      setError('Debes indicar las repeticiones')
+    const errorRangos = validarRangos(series, repeticiones)
+    if (errorRangos) {
+      setError(errorRangos)
       return
     }
 
@@ -319,11 +321,11 @@ export default function EjercicioModal({
               type="text"
               value={repeticiones}
               onChange={(e) => setRepeticiones(e.target.value)}
-              placeholder="Ej: 10-12, 8, 15"
+              placeholder="Ej: 10-12, 8, o 6-8 / 8-10"
               className="w-full px-4 py-3 h-12 border border-slate-200 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Puedes usar rangos (8-12) o valores fijos (10)
+              Puedes usar rangos (8-12) o valores fijos (10). Para un rango distinto por serie, sepáralos con / (6-8 / 8-10). Si hay menos rangos que series, el último se repite.
             </p>
           </div>
 
