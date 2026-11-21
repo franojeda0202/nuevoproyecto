@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+Antes de proponer features nuevas, leer `docs/product-direction.md`: dice qué se construye ahora, qué está en espera y por qué. El feedback de uso real va en `docs/feedback/`.
+
 ## Commands
 
 ```bash
@@ -9,9 +11,10 @@ npm run dev      # Start development server
 npm run build    # Production build
 npm run start    # Start production server
 npm run lint     # Run ESLint
+npm test         # vitest run — solo lógica pura (ver abajo)
 ```
 
-There are no automated tests configured in this project.
+Vitest cubre solo funciones puras, sin Supabase ni componentes (hoy: `lib/utils/rangos-series.ts`). Los tests van al lado del archivo, como `*.test.ts`. Lo demás se verifica con build, lint y probando en el teléfono.
 
 ## Environment Setup
 
@@ -49,6 +52,7 @@ GymLogic is a Next.js 16 App Router app for generating and managing personalized
 
 - `app/api/` — Two API routes: `chat` (OpenAI proxy) and `generar-rutina` (OpenAI routine generation)
 - `app/components/` — React components; `rutina/` sub-folder for exercise editing UI; `sesion/` sub-folder for `SerieRow`
+- `app/hoy/` — Pantalla de inicio con sesión iniciada: el día que toca (el siguiente al último entrenado), la semana y la última sesión. Lógica pura en `lib/utils/hoy.ts`
 - `app/rutinas/` — Routine management page (full CRUD)
 - `app/entrenar/` — Start session page + active session UI (`[sesionId]/page.tsx`)
 - `app/entrenamiento/` — Training history list + read-only session detail (`[sesionId]/page.tsx`)
@@ -58,6 +62,16 @@ GymLogic is a Next.js 16 App Router app for generating and managing personalized
 - `lib/types/` — TypeScript types for DB entities (`database.ts`) and chat (`chat.ts`)
 - `lib/prompts/system-prompt.txt` — GymLogic AI coach persona for chat (Spanish)
 - `lib/prompts/system-prompt-rutina.txt` — GymLogic AI routine generation prompt (Spanish)
+
+### Navegación
+
+En el celular hay una barra inferior (Hoy, Rutina, Historial, Cuenta) en `AppLayout`; en escritorio, la barra lateral. La sesión activa (`/entrenar/[id]`) no muestra la barra ni el chat: tiene su propia barra inferior y el botón flotante tapaba la columna de completar serie. En el celular el chat no tiene botón flotante; se abre con `abrirChat()` de `lib/utils/chat-evento.ts` (hoy, desde el encabezado de Hoy). Con rutina, el inicio redirige a `/hoy`.
+
+Sesión activa: el ejercicio "de ahora" es el primero con series sin completar (`lib/utils/sesion-activa.ts`); va abierto y los demás plegados. Completar una serie arranca solo el descanso (`BandaDescanso`), con la última duración elegida en el panel. El dato "Última vez" se busca por `ejercicio_id` en las últimas 30 sesiones, no por día de la rutina.
+
+El contenedor de `AppLayout` usa `overflow-x-clip`, no `overflow-x-hidden`: hidden lo convierte en contenedor de scroll y rompe los encabezados `sticky`.
+
+Terminar una sesión siempre pasa por `ConfirmarFinalizarPanel`: una sesión finalizada no se puede editar, así que nunca es un solo toque.
 
 ### Service Layer Pattern
 
@@ -93,6 +107,17 @@ If RLS is misconfigured or disabled, any authenticated user could read or modify
 Fire-and-forget event tracking that never blocks the UX thread. `lib/analytics.ts` for client-side, `lib/analytics-server.ts` for API routes. Tracked events: `rutina_generada`, `chat_interaccion`, `ejercicio_manual_edit`, `error_sistema`.
 
 ## Conventions
+
+### Uso en el teléfono, en el gimnasio
+
+La app se usa con una mano, cansado, entre series. Dos reglas:
+
+- **Inputs a 16px mínimo** (`text-base` o sin clase de tamaño). Con menos, iOS Safari hace zoom automático al enfocar un campo, y en la pantalla de sesión activa eso pasa en cada serie.
+- **Todo lo que se toca mide al menos 44px** (`min-h-11`, `w-11 h-11`). Si el objetivo visual es chico, agrandarlo con padding, no con texto más grande.
+
+### Auth en el servidor: `getUser()`, nunca `getSession()`
+
+En API routes y código de servidor, `getSession()` solo lee la cookie sin validarla, así que puede venir adulterada. `getUser()` valida el token contra Supabase. En componentes de cliente `getSession()` está bien.
 
 ### React / Supabase pattern (critical)
 
@@ -131,6 +156,10 @@ useEffect(() => {
   return () => clearInterval(id)
 }, [timerCorriendo])
 ```
+
+### Rangos de repeticiones por serie
+
+`rutina_ejercicios.repeticiones` es texto y puede tener un rango distinto por serie, separado por `/`: `"6-8 / 8-10"`. Si hay menos rangos que series, el último se repite. Toda lectura o validación de ese campo pasa por `lib/utils/rangos-series.ts`; no partir el string a mano.
 
 ### Supabase row limit
 

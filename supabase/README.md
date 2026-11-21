@@ -7,6 +7,7 @@ supabase/
   migrations/
     001_schema_inicial.sql   — tablas base + RLS
     002_perfiles.sql         — tabla de perfiles de usuario
+    003_catalogo_rutina_rama.sql — 20 ejercicios para la rutina de Rama (incluye el primero de core)
 ```
 
 ## Cómo aplicar en un proyecto nuevo (ej: entorno dev)

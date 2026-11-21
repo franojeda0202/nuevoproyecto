@@ -14,23 +14,32 @@ import {
 import { SesionActiva } from '@/lib/types/database'
 import SerieRow from '@/app/components/sesion/SerieRow'
 import TemporizadorPanel from '@/app/components/sesion/TemporizadorPanel'
+import ConfirmarFinalizarPanel from '@/app/components/sesion/ConfirmarFinalizarPanel'
+import { resumirSesion } from '@/lib/utils/resumen-sesion'
 import { reproducirBeep } from '@/lib/utils/audio'
+import { formatearPrescripcion, rangoDeSerie } from '@/lib/utils/rangos-series'
 import { trackEvent } from '@/lib/analytics'
+import { useTiempoTranscurrido } from '@/lib/hooks/useTiempoTranscurrido'
+import { formatearTiempo } from '@/lib/utils/tiempo'
+import BandaDescanso from '@/app/components/sesion/BandaDescanso'
+import {
+  estadoEjercicio,
+  formatearUltimaVez,
+  indiceEjercicioActual,
+  seriesHechas,
+} from '@/lib/utils/sesion-activa'
 
-function formatearCountdown(segundos: number): string {
-  const m = Math.floor(segundos / 60)
-  const s = segundos % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
+// Duración del descanso automático: la última elegida en el panel, por navegador
+const CLAVE_DESCANSO = 'gymlogic:descanso-segundos'
+const DESCANSO_POR_DEFECTO = 120
 
-function formatearTiempo(segundos: number): string {
-  const h = Math.floor(segundos / 3600)
-  const m = Math.floor((segundos % 3600) / 60)
-  const s = segundos % 60
-  if (h > 0) {
-    return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+function leerDescanso(): number {
+  try {
+    const guardado = Number(window.localStorage.getItem(CLAVE_DESCANSO))
+    return Number.isFinite(guardado) && guardado > 0 ? guardado : DESCANSO_POR_DEFECTO
+  } catch {
+    return DESCANSO_POR_DEFECTO
   }
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 export default function SesionActivaPage() {
@@ -43,7 +52,7 @@ export default function SesionActivaPage() {
   const [sesion, setSesion] = useState<SesionActiva | null>(null)
   const [loading, setLoading] = useState(true)
   const [finalizando, setFinalizando] = useState(false)
-  const [tiempoTranscurrido, setTiempoTranscurrido] = useState(0) // segundos
+  const [confirmarAbierto, setConfirmarAbierto] = useState(false)
 
   // Temporizador de descanso
   const [panelOpen, setPanelOpen] = useState(false)
@@ -52,6 +61,35 @@ export default function SesionActivaPage() {
   const [timerCorriendo, setTimerCorriendo] = useState(false)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const beepFiredRef = useRef(false)
+  // Lazy: la pantalla se pinta en el cliente después de cargar, así que leer
+  // localStorage acá no desajusta la hidratación (el servidor solo pinta el spinner)
+  const [descansoSegundos, setDescansoSegundos] = useState(() =>
+    typeof window === 'undefined' ? DESCANSO_POR_DEFECTO : leerDescanso()
+  )
+
+  // Ejercicios abiertos a mano, además del actual (que siempre está abierto)
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set())
+  const indiceActual = sesion ? indiceEjercicioActual(sesion.ejercicios) : -1
+  const indiceAnteriorRef = useRef<number | null>(null)
+
+  // Al completar un ejercicio, llevar la vista al siguiente (no en la carga inicial)
+  useEffect(() => {
+    if (!sesion) return
+    const anterior = indiceAnteriorRef.current
+    indiceAnteriorRef.current = indiceActual
+    if (anterior === null || anterior === indiceActual || indiceActual < 0) return
+    const id = sesion.ejercicios[indiceActual].rutina_ejercicio_id
+    document.getElementById(`ej-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [indiceActual, sesion])
+
+  const alternarAbierto = (id: string) => {
+    setAbiertos((prev) => {
+      const nuevo = new Set(prev)
+      if (nuevo.has(id)) nuevo.delete(id)
+      else nuevo.add(id)
+      return nuevo
+    })
+  }
 
   useEffect(() => {
     if (loadingAuth) return
@@ -68,14 +106,7 @@ export default function SesionActivaPage() {
     })
   }, [loadingAuth, authenticated, sesionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!sesion?.iniciada_at) return
-    const inicio = new Date(sesion.iniciada_at).getTime()
-    const tick = () => setTiempoTranscurrido(Math.floor((Date.now() - inicio) / 1000))
-    tick() // calcular inmediatamente sin esperar 1 segundo
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [sesion?.iniciada_at])
+  const tiempoTranscurrido = useTiempoTranscurrido(sesion?.iniciada_at)
 
   // Decrementa el contador cada segundo mientras el timer corre
   useEffect(() => {
@@ -209,6 +240,14 @@ export default function SesionActivaPage() {
   }, [supabase, sesionId])
 
   const handleToggleCompletada = (serieId: string, ejId: string) => {
+    // Se decide con el estado actual, fuera del updater: si esta serie pasa a
+    // completada y quedan otras por hacer, arranca el descanso solo.
+    const todas = sesion?.ejercicios.flatMap((e) => e.series) ?? []
+    const estaSerie = todas.find((s) => s.id === serieId)
+    const pasaACompletada = !!estaSerie && !estaSerie.completada
+    const quedanOtras = todas.some((s) => s.id !== serieId && !s.completada)
+    if (pasaACompletada && quedanOtras) iniciarDescanso(descansoSegundos, true)
+
     let serieActualizada: { peso_kg: string; repeticiones: string; completada: boolean } | null = null
 
     setSesion(prev => {
@@ -252,10 +291,23 @@ export default function SesionActivaPage() {
       setFinalizando(false)
       return
     }
-    router.push('/rutinas')
+    router.push('/hoy')
   }
 
+  const cerrarConfirmar = useCallback(() => setConfirmarAbierto(false), [])
+
+  // Desde el panel: además de arrancar, recuerda la duración para los automáticos
   const handleTimerStart = (segundos: number) => {
+    setDescansoSegundos(segundos)
+    try {
+      window.localStorage.setItem(CLAVE_DESCANSO, String(segundos))
+    } catch {
+      // Sin almacenamiento: vale solo para esta sesión
+    }
+    iniciarDescanso(segundos, false)
+  }
+
+  function iniciarDescanso(segundos: number, automatico: boolean) {
     // Crear/desbloquear AudioContext en este gesto del usuario (requisito iOS/Android)
     try {
       if (!audioCtxRef.current) {
@@ -275,7 +327,12 @@ export default function SesionActivaPage() {
     setTiempoTotal(segundos)
     setTimerCorriendo(true)
     setPanelOpen(false)
-    trackEvent('temporizador_iniciado', { duracion_segundos: segundos })
+    trackEvent('temporizador_iniciado', { duracion_segundos: segundos, automatico })
+  }
+
+  const sumarDescanso = () => {
+    setTiempoRestante((prev) => prev + 30)
+    setTiempoTotal((prev) => prev + 30)
   }
 
   const handleTimerCancelar = () => {
@@ -303,10 +360,10 @@ export default function SesionActivaPage() {
             <p className="text-slate-600 mb-4">Sesión no encontrada.</p>
             <button
               type="button"
-              onClick={() => router.push('/entrenar')}
+              onClick={() => router.push('/hoy')}
               className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all"
             >
-              Volver a Entrenar
+              Volver a Hoy
             </button>
           </div>
         </div>
@@ -315,126 +372,234 @@ export default function SesionActivaPage() {
   }
 
   if (sesion.finalizada_at) {
-    router.replace('/rutinas')
+    router.replace('/hoy')
     return null
   }
 
   return (
     <AppLayout>
 
-    {/* Badge cronómetro de sesión */}
-    {sesion && (
-      <div className="fixed top-4 right-4 z-40 flex items-center gap-1.5 bg-neutral-900 text-yellow-500 rounded-full px-3 py-1.5 text-sm font-bold tabular-nums shadow-lg pointer-events-none">
-        <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse flex-shrink-0" />
-        {formatearTiempo(tiempoTranscurrido)}
-      </div>
-    )}
-
-    <div className="min-h-screen app-page-bg p-4 md:p-8 pb-28">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
+    <div className={`min-h-screen app-page-bg px-4 md:px-8 ${timerCorriendo ? 'pb-48' : 'pb-28'}`}>
+      <div className="max-w-2xl mx-auto">
+        {/* Encabezado fijo: el progreso se ve siempre, aunque bajes por los ejercicios */}
+        <div className="sticky top-0 z-20 -mx-4 md:-mx-8 px-4 md:px-8 pt-2 pb-3 mb-4 bg-slate-100/95 backdrop-blur-sm border-b border-slate-200">
           <button
             type="button"
-            onClick={() => router.push('/entrenar')}
-            className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-flex items-center gap-1 transition-colors pl-14 md:pl-0"
+            onClick={() => router.push('/hoy')}
+            className="min-h-11 text-sm text-slate-600 hover:text-slate-900 inline-flex items-center gap-1 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Cambiar día
+            Volver
           </button>
-          <h1 className="pl-14 md:pl-0 text-3xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+          <h1 className="text-3xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-2">
             {sesion.dia_nombre}
           </h1>
-          <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
+          {(() => {
+            const { seriesCompletadas, seriesTotales } = resumirSesion(sesion.ejercicios)
+            const porcentaje = seriesTotales > 0 ? (seriesCompletadas / seriesTotales) * 100 : 0
+            return (
+              <div className="flex items-center gap-3">
+                <div
+                  role="progressbar"
+                  aria-label="Series completadas"
+                  aria-valuemin={0}
+                  aria-valuemax={seriesTotales}
+                  aria-valuenow={seriesCompletadas}
+                  className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden"
+                >
+                  <div className="h-full bg-yellow-500 transition-[width] duration-300" style={{ width: `${porcentaje}%` }} />
+                </div>
+                <p className="text-sm font-semibold text-slate-600 tabular-nums flex-shrink-0">
+                  {seriesCompletadas} de {seriesTotales} series
+                </p>
+              </div>
+            )
+          })()}
         </div>
 
-        {/* Ejercicios */}
-        <div className="grid md:grid-cols-2 gap-5">
-          {sesion.ejercicios.map((ej) => (
-            <div
-              key={ej.rutina_ejercicio_id}
-              className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-slate-900">{ej.nombre}</h3>
-                <span className="text-xs font-medium text-yellow-700 bg-yellow-50 border border-yellow-200 px-2 py-1 rounded-lg flex-shrink-0">
-                  {ej.repeticiones_rutina
-                    ? `${ej.series_rutina} × ${ej.repeticiones_rutina}`
-                    : `${ej.series_rutina} series`}
-                </span>
-              </div>
+        {/* Ejercicios: el actual abierto y destacado; los demás plegados en una línea */}
+        <div className="flex flex-col gap-3">
+          {sesion.ejercicios.map((ej, i) => {
+            const esActual = i === indiceActual
+            const abierto = esActual || abiertos.has(ej.rutina_ejercicio_id)
+            const estado = estadoEjercicio(ej)
+            const ultimaVez = formatearUltimaVez(ej.ultima_serie)
 
-              {/* Headers de columnas */}
-              <div className="flex items-center gap-2 px-3 mb-2">
-                <span className="text-xs font-semibold text-slate-400 w-5 text-center">#</span>
-                <span className="text-xs font-semibold text-slate-400 w-20 text-center">Peso</span>
-                <span className="text-xs font-semibold text-slate-400 w-16 text-center">Reps</span>
-              </div>
+            if (!abierto) {
+              return (
+                <button
+                  key={ej.rutina_ejercicio_id}
+                  id={`ej-${ej.rutina_ejercicio_id}`}
+                  type="button"
+                  onClick={() => alternarAbierto(ej.rutina_ejercicio_id)}
+                  aria-expanded={false}
+                  className="scroll-mt-40 w-full min-h-14 bg-white border border-slate-200 rounded-2xl px-4 py-3 flex items-center gap-3 text-left hover:border-slate-300 transition-colors"
+                >
+                  {estado === 'completo' ? (
+                    <span className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </span>
+                  ) : (
+                    <span className="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0" aria-hidden="true" />
+                  )}
+                  <span className="flex-1 min-w-0 font-semibold text-slate-900 break-words">
+                    {ej.nombre}
+                    <span className="sr-only">{estado === 'completo' ? ', completo' : estado === 'empezado' ? ', empezado' : ''}</span>
+                  </span>
+                  <span className="text-sm text-slate-600 tabular-nums flex-shrink-0">
+                    {estado === 'pendiente' ? formatearPrescripcion(ej.series_rutina, ej.repeticiones_rutina) : seriesHechas(ej)}
+                  </span>
+                  <svg className="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 9l6 6 6-6" />
+                  </svg>
+                </button>
+              )
+            }
 
-              {/* Series */}
-              <div className="space-y-2">
-                {ej.series.map((serie) => (
-                  <SerieRow
-                    key={serie.id}
-                    numSerie={serie.numero_serie}
-                    serieId={serie.id}
-                    pesoPrevio={ej.ultima_serie?.peso_kg ?? null}
-                    repsPrevias={ej.ultima_serie?.repeticiones ?? null}
-                    pesoActual={serie.peso_kg}
-                    repsActual={serie.repeticiones}
-                    completada={serie.completada}
-                    onPesoChange={(id, val) => handlePesoChange(id, ej.rutina_ejercicio_id, val)}
-                    onRepsChange={(id, val) => handleRepsChange(id, ej.rutina_ejercicio_id, val)}
-                    onPesoBlur={(id) => handlePesoBlur(id, ej.rutina_ejercicio_id)}
-                    onBlur={(id) => handleBlur(id, ej.rutina_ejercicio_id)}
-                    onToggleCompletada={(id) => handleToggleCompletada(id, ej.rutina_ejercicio_id)}
-                  />
-                ))}
-              </div>
+            return (
+              <section
+                key={ej.rutina_ejercicio_id}
+                id={`ej-${ej.rutina_ejercicio_id}`}
+                aria-label={ej.nombre}
+                className={`scroll-mt-40 bg-white rounded-2xl p-4 shadow-sm ${
+                  esActual ? 'border-2 border-neutral-900' : 'border border-slate-200'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="min-w-0">
+                    {esActual && (
+                      <p className="text-xs font-bold tracking-widest uppercase text-yellow-800 mb-0.5">
+                        Ahora · {i + 1} de {sesion.ejercicios.length}
+                      </p>
+                    )}
+                    <h2 className="text-lg font-bold text-slate-900 leading-snug break-words">{ej.nombre}</h2>
+                    <p className="text-sm text-slate-600 mt-0.5">
+                      {ultimaVez ? `Última vez: ${ultimaVez}` : 'Primera vez con este ejercicio'}
+                      {' · '}
+                      {formatearPrescripcion(ej.series_rutina, ej.repeticiones_rutina)}
+                    </p>
+                  </div>
+                  {!esActual && (
+                    <button
+                      type="button"
+                      onClick={() => alternarAbierto(ej.rutina_ejercicio_id)}
+                      aria-expanded={true}
+                      aria-label={`Plegar ${ej.nombre}`}
+                      className="w-11 h-11 -mr-2 -mt-1 flex items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 flex-shrink-0"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 15l-6-6-6 6" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Headers de columnas */}
+                <div className="flex items-center gap-2 px-3 mb-2">
+                  <span className="text-xs font-semibold text-slate-500 w-5 text-center">#</span>
+                  <span className="text-xs font-semibold text-slate-500 w-20 text-center">Kg</span>
+                  <span className="text-xs font-semibold text-slate-500 w-16 text-center">Reps</span>
+                  <span className="text-xs font-semibold text-slate-500 w-11 text-center">Obj.</span>
+                </div>
+
+                {/* Series */}
+                <div className="space-y-2">
+                  {ej.series.map((serie) => (
+                    <SerieRow
+                      key={serie.id}
+                      numSerie={serie.numero_serie}
+                      serieId={serie.id}
+                      pesoPrevio={ej.ultima_serie?.peso_kg ?? null}
+                      repsPrevias={ej.ultima_serie?.repeticiones ?? null}
+                      rangoObjetivo={rangoDeSerie(ej.repeticiones_rutina, serie.numero_serie)}
+                      pesoActual={serie.peso_kg}
+                      repsActual={serie.repeticiones}
+                      completada={serie.completada}
+                      onPesoChange={(id, val) => handlePesoChange(id, ej.rutina_ejercicio_id, val)}
+                      onRepsChange={(id, val) => handleRepsChange(id, ej.rutina_ejercicio_id, val)}
+                      onPesoBlur={(id) => handlePesoBlur(id, ej.rutina_ejercicio_id)}
+                      onBlur={(id) => handleBlur(id, ej.rutina_ejercicio_id)}
+                      onToggleCompletada={(id) => handleToggleCompletada(id, ej.rutina_ejercicio_id)}
+                    />
+                  ))}
+                </div>
+              </section>
+            )
+          })}
+
+          {indiceActual === -1 && (
+            <div className="bg-neutral-900 rounded-2xl p-5 text-center">
+              <p className="text-3xl font-display text-yellow-500 tracking-wider leading-none">Todo hecho</p>
+              <p className="text-neutral-200 mt-1">Completaste todas las series. Tocá Terminar para guardar el entrenamiento.</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
-      {/* Barra inferior sticky */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 p-4 bg-white/95 backdrop-blur-sm border-t border-slate-200">
+      {/* Barra inferior sticky. md:left: en escritorio no se mete debajo del panel lateral, contraído o no */}
+      <div className="fixed bottom-0 left-0 md:left-[var(--ancho-lateral)] right-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white/95 backdrop-blur-sm border-t border-slate-200">
+        {timerCorriendo && (
+          <div className="max-w-lg mx-auto mb-3">
+            <BandaDescanso
+              tiempoRestante={tiempoRestante}
+              tiempoTotal={tiempoTotal}
+              onSumar={sumarDescanso}
+              onSaltar={handleTimerCancelar}
+            />
+          </div>
+        )}
         <div className="max-w-lg mx-auto flex gap-3 items-center">
+
+          {/* Tiempo de entrenamiento: abajo, donde se mira entre series, no tapando el título */}
+          <div className="flex-shrink-0 min-w-[64px]" aria-live="off">
+            <p className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse" aria-hidden="true" />
+              Tiempo
+            </p>
+            <p className="text-xl font-bold text-slate-900 tabular-nums leading-tight">
+              {formatearTiempo(tiempoTranscurrido)}
+            </p>
+          </div>
 
           {/* Botón temporizador */}
           <button
             type="button"
             onClick={() => setPanelOpen(prev => !prev)}
             className="w-12 h-12 flex-shrink-0 bg-neutral-900 text-white rounded-xl flex items-center justify-center hover:bg-neutral-800 transition-all duration-200"
-            aria-label="Abrir temporizador de descanso"
+            aria-label="Elegir duración del descanso"
           >
-            {timerCorriendo ? (
-              <span className="text-yellow-500 text-sm font-bold tabular-nums animate-pulse">
-                {formatearCountdown(tiempoRestante)}
-              </span>
-            ) : (
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 3" />
-                <path d="M9 2h6" />
-              </svg>
-            )}
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 3" />
+              <path d="M9 2h6" />
+            </svg>
           </button>
 
-          {/* Botón finalizar */}
+          {/* Botón terminar: abre la confirmación, nunca finaliza directo */}
           <button
             type="button"
-            onClick={handleFinalizar}
+            onClick={() => setConfirmarAbierto(true)}
             disabled={finalizando}
-            className="flex-1 h-12 bg-yellow-500 text-black rounded-xl font-bold text-lg hover:bg-yellow-400 transition-all duration-200 active:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-neutral-900/10 flex items-center justify-center"
+            className="flex-1 min-w-0 h-12 border-2 border-neutral-900 text-neutral-900 bg-white rounded-xl font-bold text-base hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            {finalizando ? 'Finalizando...' : 'Finalizar sesión'}
+            Terminar
           </button>
 
         </div>
       </div>
     </div>
+    <ConfirmarFinalizarPanel
+      isOpen={confirmarAbierto}
+      resumen={resumirSesion(sesion.ejercicios)}
+      duracionSegundos={tiempoTranscurrido}
+      finalizando={finalizando}
+      onSeguir={cerrarConfirmar}
+      onConfirmar={handleFinalizar}
+    />
     <TemporizadorPanel
       isOpen={panelOpen}
       onClose={() => setPanelOpen(false)}

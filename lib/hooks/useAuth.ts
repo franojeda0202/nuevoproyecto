@@ -21,6 +21,14 @@ export function useAuth(): UseAuthReturn {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Si Supabase manda el link de recuperación a otra pantalla (por ejemplo,
+      // al Site URL cuando la URL pedida no está en la lista de redirects), la
+      // sesión igual se crea. Sin esto, la persona entra a su cuenta sin
+      // llegar nunca al formulario de nueva contraseña.
+      if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/auth/reset-password') {
+        window.location.href = '/auth/reset-password'
+        return
+      }
       if (session?.user) {
         setAuthenticated(true)
         setUser(session.user)

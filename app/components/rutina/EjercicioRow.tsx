@@ -151,7 +151,7 @@ export function EjercicioRowMobile({
     >
       <div className="flex justify-between items-start gap-3">
         {/* Handle + número + nombre */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-start gap-2 flex-1 min-w-0 pt-2.5">
           <button
             {...attributes}
             {...listeners}
@@ -161,22 +161,27 @@ export function EjercicioRowMobile({
           >
             <GripIcon className="w-4 h-4" />
           </button>
-          <span className="text-xs text-slate-400 select-none flex-shrink-0">{index}.</span>
-          <p className="font-semibold text-gray-900 truncate">{ejercicio.ejercicio.nombre}</p>
+          <span className="text-xs text-slate-500 select-none flex-shrink-0 pt-1">{index}.</span>
+          {/* Sin truncate: en el celular cortaba "jalón al pecho en…" y no se sabía qué ejercicio era */}
+          <p className="font-semibold text-gray-900 break-words leading-snug">{ejercicio.ejercicio.nombre}</p>
         </div>
 
         <div className="flex gap-1 flex-shrink-0">
           <button
+            type="button"
             onClick={() => onEdit(ejercicio)}
-            className="p-2 text-slate-500 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all duration-200"
+            aria-label={`Editar ${ejercicio.ejercicio.nombre}`}
+            className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg transition-all duration-200"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
           </button>
           <button
+            type="button"
             onClick={() => onDelete(ejercicio)}
-            className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+            aria-label={`Borrar ${ejercicio.ejercicio.nombre}`}
+            className="w-11 h-11 flex items-center justify-center text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

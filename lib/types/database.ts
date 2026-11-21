@@ -241,9 +241,14 @@ export interface SesionActiva {
 
 export interface SesionResumen {
   id: string
-  dia_nombre: string
+  dia_nombre: string       // "Día 1 — Full Body 1" (vacío si se borró el día)
+  dia_orden: number | null
+  nombre_dia: string       // "Full Body 1"
+  iniciada_at: string | null
   finalizada_at: string    // ISO string
   series_completadas: number
+  series_totales: number
+  kg_movidos: number       // suma de peso × reps de las series completadas
 }
 
 export interface SerieDetalle {

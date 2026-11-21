@@ -8,13 +8,16 @@ import { obtenerDetalleSesion } from '@/lib/services/sesion-service'
 import { SesionDetalle } from '@/lib/types/database'
 import AppLayout from '@/app/components/AppLayout'
 
+// "Martes, 17 de marzo de 2026": mayúscula solo al principio. Con la clase
+// `capitalize` quedaba "Martes, 17 De Marzo De 2026".
 function formatearFechaLarga(iso: string): string {
-  return new Date(iso).toLocaleDateString('es-AR', {
+  const texto = new Date(iso).toLocaleDateString('es-AR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   })
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
 export default function DetalleSesionPage() {
@@ -80,17 +83,17 @@ export default function DetalleSesionPage() {
             <button
               type="button"
               onClick={() => router.push('/entrenamiento')}
-              className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-flex items-center gap-1 transition-colors pl-14 md:pl-0"
+              className="text-sm text-slate-500 hover:text-slate-700 mb-4 inline-flex items-center gap-1 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Historial
             </button>
-            <h1 className="text-3xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1 pl-14 md:pl-0">
+            <h1 className="text-3xl md:text-5xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
               {sesion.dia_nombre}
             </h1>
-            <p className="text-slate-500 text-sm capitalize pl-14 md:pl-0">
+            <p className="text-slate-600 text-sm">
               {formatearFechaLarga(sesion.finalizada_at)}
             </p>
             <div className="h-0.5 w-12 bg-yellow-500 rounded-full mt-2" />
@@ -122,7 +125,7 @@ export default function DetalleSesionPage() {
                       }`}
                     >
                       {/* Número de serie */}
-                      <span className="text-sm font-semibold text-slate-400 w-5 text-center flex-shrink-0">
+                      <span className="text-sm font-semibold text-slate-500 w-5 text-center flex-shrink-0">
                         {serie.numero_serie}
                       </span>
 
@@ -136,18 +139,16 @@ export default function DetalleSesionPage() {
                         {serie.repeticiones !== null ? serie.repeticiones : '—'}
                       </span>
 
-                      {/* Ícono completada */}
-                      <div
-                        className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          serie.completada
-                            ? 'bg-yellow-500 text-black'
-                            : 'bg-white border-2 border-slate-200 text-slate-200'
-                        }`}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
+                      {/* Estado de solo lectura: un ícono sin círculo, para que no parezca un botón */}
+                      <span className="ml-auto flex-shrink-0 w-6 flex justify-center">
+                        {serie.completada ? (
+                          <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" role="img" aria-label="Completada">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <span className="sr-only">Sin completar</span>
+                        )}
+                      </span>
                     </div>
                   ))}
                 </div>

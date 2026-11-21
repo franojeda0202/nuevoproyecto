@@ -28,7 +28,6 @@ interface MetricasTabProps {
 }
 
 export default function MetricasTab({ userId, supabase }: MetricasTabProps) {
-  const [subTab, setSubTab] = useState<'resumen' | 'progreso'>('resumen')
   const [metricas, setMetricas] = useState<MetricasResumen | null>(null)
   const [prsData, setPrsData] = useState<PRejercicio[]>([])
   const [ejerciciosDisponibles, setEjerciciosDisponibles] = useState<EjercicioRutinaActiva[]>([])
@@ -185,43 +184,9 @@ export default function MetricasTab({ userId, supabase }: MetricasTabProps) {
 
   return (
     <div>
-      {/* Sub-tabs: Resumen / Progreso */}
-      <div className="flex gap-2 mb-6">
-        <button
-          type="button"
-          onClick={() => setSubTab('resumen')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            subTab === 'resumen'
-              ? 'bg-yellow-500 text-black'
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          Resumen
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubTab('progreso')}
-          className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            subTab === 'progreso'
-              ? 'bg-yellow-500 text-black'
-              : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          Progreso
-        </button>
-      </div>
-
-      {subTab === 'progreso' ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-yellow-50 flex items-center justify-center">
-            <svg className="w-7 h-7 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          </div>
-          <p className="text-slate-500 text-sm">Próximamente</p>
-          <p className="text-slate-400 text-xs mt-1">Gráficos de progresión por ejercicio</p>
-        </div>
-      ) : (
+      {/* La sub-pestaña "Progreso" se sacó mientras sea solo "Próximamente":
+          una pestaña anidada vacía confunde más de lo que promete. Vuelve
+          cuando exista el progreso por ejercicio (docs/product-direction.md). */}
         <div className="space-y-4">
           {metricas && (
             <>
@@ -245,7 +210,6 @@ export default function MetricasTab({ userId, supabase }: MetricasTabProps) {
             onPinChange={handlePinChange}
           />
         </div>
-      )}
     </div>
   )
 }

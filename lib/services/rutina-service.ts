@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import { validarRangos } from '@/lib/utils/rangos-series'
 import { 
   ResultadoOperacion, 
   NuevoEjercicioRutina, 
@@ -154,6 +155,13 @@ export async function actualizarEjercicio(
       }
       updateData.repeticiones = datos.repeticiones.trim()
     }
+
+    // Con series y repeticiones juntas se puede chequear que no haya más
+    // rangos por serie que series. Si viene una sola, la otra queda en la DB.
+    if (datos.series !== undefined && datos.repeticiones !== undefined) {
+      const errorRangos = validarRangos(datos.series, datos.repeticiones)
+      if (errorRangos) return { success: false, error: errorRangos }
+    }
     
     if (datos.notas_coach !== undefined) {
       updateData.notas_coach = datos.notas_coach?.trim() || null
@@ -297,6 +305,11 @@ export async function agregarEjercicio(
     
     if (!datos.repeticiones?.trim()) {
       return { success: false, error: 'Las repeticiones no pueden estar vacías' }
+    }
+
+    const errorRangos = validarRangos(datos.series, datos.repeticiones)
+    if (errorRangos) {
+      return { success: false, error: errorRangos }
     }
 
     // Insertar nuevo ejercicio

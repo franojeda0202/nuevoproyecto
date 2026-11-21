@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { EVENTO_ABRIR_CHAT } from '@/lib/utils/chat-evento'
 import { usePathname } from 'next/navigation'
 import { ChatMessage } from '@/lib/types/chat'
 import toast from 'react-hot-toast'
@@ -67,8 +68,17 @@ export default function ChatBubble() {
     }
   }, [isOpen])
 
-  // No mostrar el chat si el usuario no está autenticado
-  if (loading || !authenticated) {
+  // En el celular no hay botón flotante: lo abren otras pantallas con un evento
+  useEffect(() => {
+    const abrir = () => setIsOpen(true)
+    window.addEventListener(EVENTO_ABRIR_CHAT, abrir)
+    return () => window.removeEventListener(EVENTO_ABRIR_CHAT, abrir)
+  }, [])
+
+  // No mostrar el chat si el usuario no está autenticado.
+  // Tampoco en la sesión activa: el botón flotante tapaba la columna de
+  // completar serie, que es lo que más se toca entre series.
+  if (loading || !authenticated || enSesionActiva) {
     return null
   }
 
@@ -154,11 +164,12 @@ export default function ChatBubble() {
 
   return (
     <>
-      {/* Burbuja flotante */}
+      {/* Burbuja flotante: solo en escritorio. En el celular tapaba contenido;
+          ahí el chat se abre desde el encabezado de Hoy (EVENTO_ABRIR_CHAT). */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className={`fixed ${enSesionActiva ? 'bottom-24' : 'bottom-4 md:bottom-6'} right-4 md:right-6 w-14 h-14 bg-neutral-900 text-white rounded-full shadow-2xl shadow-neutral-900/30 hover:bg-neutral-800 transition-all z-50 flex items-center justify-center hover:scale-110 active:scale-95`}
+          className="hidden md:flex fixed bottom-6 right-6 w-14 h-14 bg-neutral-900 text-white rounded-full shadow-2xl shadow-neutral-900/30 hover:bg-neutral-800 transition-all z-50 items-center justify-center hover:scale-110 active:scale-95"
           aria-label="Abrir chat"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +180,7 @@ export default function ChatBubble() {
 
       {/* Ventana de chat */}
       {isOpen && (
-        <div className={`fixed ${enSesionActiva ? 'bottom-24' : 'bottom-4 md:bottom-6'} right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[calc(100vh-8rem)] md:h-[600px] max-h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50`}>
+        <div className={`fixed bottom-4 md:bottom-6 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[calc(100vh-8rem)] md:h-[600px] max-h-[calc(100vh-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col z-50`}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl">
             <div className="flex items-center gap-2">

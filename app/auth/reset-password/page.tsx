@@ -1,16 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { validatePassword } from '@/lib/utils/validaciones'
 
 function ResetPasswordForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const code = searchParams.get('code')
   const supabase = useMemo(() => createClient(), [])
-  const exchanged = useRef(false)
 
   type PageState = 'loading' | 'invalid' | 'ready'
   const [pageState, setPageState] = useState<PageState>('loading')
@@ -22,18 +19,19 @@ function ResetPasswordForm() {
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!code) {
-      setPageState('invalid')
-      return
+    // El cliente de Supabase canjea solo el ?code= del mail al iniciar
+    // (detectSessionInUrl, flujo PKCE). Canjearlo de nuevo acá falla, porque el
+    // verificador ya se usó: la persona quedaba logueada viendo "Link inválido"
+    // y nunca cambiaba la contraseña. getSession() espera a que ese canje
+    // termine; si dejó sesión, el link era válido.
+    let activo = true
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (activo) setPageState(session ? 'ready' : 'invalid')
+    })
+    return () => {
+      activo = false
     }
-    // Guard contra doble ejecución en React Strict Mode (dev)
-    if (exchanged.current) return
-    exchanged.current = true
-    ;(async () => {
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-      setPageState(exchangeError ? 'invalid' : 'ready')
-    })()
-  }, [code, supabase])
+  }, [supabase])
 
   const handlePasswordBlur = () => {
     if (!password) return

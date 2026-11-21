@@ -25,8 +25,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    userId = session?.user?.id || null
+    // getUser() valida el token contra Supabase. getSession() solo lee la cookie,
+    // que en el servidor puede venir adulterada o vencida.
+    const { data: { user } } = await supabase.auth.getUser()
+    userId = user?.id || null
 
     // Requerir autenticación (ChatBubble no se muestra a usuarios no autenticados)
     if (!userId) {

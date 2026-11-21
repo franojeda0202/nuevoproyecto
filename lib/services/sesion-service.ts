@@ -117,13 +117,13 @@ export async function crearSesion(
 export async function obtenerSesionEnProgreso(
   supabase: SupabaseClient,
   userId: string
-): Promise<ResultadoOperacion<{ sesionId: string; diaNombre: string } | null>> {
+): Promise<ResultadoOperacion<{ sesionId: string; diaNombre: string; iniciadaAt: string } | null>> {
   if (!isValidUUID(userId)) return { success: false, error: 'ID inválido' }
 
   try {
     const { data, error } = await supabase
       .from('sesiones')
-      .select('id, rutina_dias(nombre_dia, orden)')
+      .select('id, iniciada_at, rutina_dias(nombre_dia, orden)')
       .eq('user_id', userId)
       .is('finalizada_at', null)
       .order('iniciada_at', { ascending: false })
@@ -141,6 +141,7 @@ export async function obtenerSesionEnProgreso(
       success: true,
       data: {
         sesionId: data.id,
+        iniciadaAt: data.iniciada_at as string,
         diaNombre: (() => {
           const rd = data.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
           return rd ? `Día ${rd.orden} — ${rd.nombre_dia}` : ''
@@ -150,6 +151,78 @@ export async function obtenerSesionEnProgreso(
   } catch (err) {
     console.error('Error en obtenerSesionEnProgreso:', err)
     return { success: false, error: 'Error al buscar sesión en progreso' }
+  }
+}
+
+/**
+ * Sesiones terminadas más recientes, para la pantalla "Hoy": qué día toca
+ * (el siguiente al último) y cómo viene la semana.
+ *
+ * Solo cuentan las que tienen al menos una serie completada: una sesión
+ * empezada y terminada sin cargar nada no es un entrenamiento, y si contara
+ * avanzaría la rotación de días y mostraría "0 series".
+ *
+ * Con `limite` chico (14 sesiones × ~30 series) no hay riesgo de pasar el
+ * tope de 1000 filas de Supabase.
+ */
+export async function obtenerSesionesRecientes(
+  supabase: SupabaseClient,
+  userId: string,
+  limite = 14
+): Promise<ResultadoOperacion<Array<{
+  id: string
+  dia_id: string | null
+  finalizada_at: string
+  dia_nombre: string
+  series_completadas: number
+}>>> {
+  if (!isValidUUID(userId)) return { success: false, error: 'ID inválido' }
+
+  try {
+    const { data, error } = await supabase
+      .from('sesiones')
+      .select('id, dia_id, finalizada_at, rutina_dias(nombre_dia)')
+      .eq('user_id', userId)
+      .not('finalizada_at', 'is', null)
+      .order('finalizada_at', { ascending: false })
+      .limit(limite)
+
+    if (error) {
+      console.error('Error buscando sesiones recientes:', error)
+      return { success: false, error: 'Error al cargar sesiones recientes' }
+    }
+    if (!data || data.length === 0) return { success: true, data: [] }
+
+    const { data: series, error: seriesError } = await supabase
+      .from('sesion_series')
+      .select('sesion_id')
+      .in('sesion_id', data.map((s) => s.id))
+      .eq('completada', true)
+
+    if (seriesError) {
+      console.error('Error contando series de sesiones recientes:', seriesError)
+      return { success: false, error: 'Error al cargar sesiones recientes' }
+    }
+
+    const porSesion = new Map<string, number>()
+    for (const fila of series ?? []) {
+      porSesion.set(fila.sesion_id, (porSesion.get(fila.sesion_id) ?? 0) + 1)
+    }
+
+    const sesiones = data
+      .map((s) => ({
+        id: s.id as string,
+        dia_id: s.dia_id as string | null,
+        finalizada_at: s.finalizada_at as string,
+        dia_nombre: (s.rutina_dias as unknown as { nombre_dia: string } | null)?.nombre_dia ?? '',
+        series_completadas: porSesion.get(s.id) ?? 0,
+      }))
+      .filter((s) => s.series_completadas > 0)
+
+    return { success: true, data: sesiones }
+  } catch (err) {
+    console.error('Error en obtenerSesionesRecientes:', err)
+    return { success: false, error: 'Error al cargar sesiones recientes' }
   }
 }
 
@@ -186,7 +259,7 @@ export async function obtenerSesionActiva(
     const [ejResult, seriesResult] = await Promise.all([
       supabase
         .from('rutina_ejercicios')
-        .select('id, series, repeticiones, orden, ejercicios:ejercicio_id(nombre)')
+        .select('id, ejercicio_id, series, repeticiones, orden, ejercicios:ejercicio_id(nombre)')
         .eq('dia_id', sesion.dia_id)
         .order('orden', { ascending: true }),
       supabase
@@ -206,37 +279,42 @@ export async function obtenerSesionActiva(
     const ejercicios = ejResult.data
     const series = seriesResult.data || []
 
-    // Pre-fill: buscar la sesión más reciente finalizada para el mismo día
-    const prefillMap: Record<string, { peso_kg: number | null; repeticiones: number | null }> = {}
+    // Pre-fill / "Última vez": por EJERCICIO, no por día de la rutina. Así
+    // sirve aunque la última vez de este día haya quedado vacía, aunque el
+    // ejercicio esté en otro día (Rama hace jalón neutro en Pull y en Torso) y
+    // aunque se haya cambiado de rutina.
+    // Se mira solo en las últimas 30 sesiones terminadas: con ~25 series por
+    // sesión queda lejos del tope de 1000 filas de Supabase.
+    const prefillPorEjercicio: Record<string, { peso_kg: number | null; repeticiones: number | null }> = {}
+    const ejercicioIds = [...new Set(ejercicios.map((ej) => ej.ejercicio_id as string))]
 
-    const { data: lastSession } = await supabase
+    const { data: recientes } = await supabase
       .from('sesiones')
       .select('id')
       .eq('user_id', sesion.user_id)
-      .eq('dia_id', sesion.dia_id)
       .neq('id', sesionId)
       .not('finalizada_at', 'is', null)
       .order('finalizada_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+      .limit(30)
 
-    if (lastSession) {
-      const { data: lastSeries } = await supabase
+    if (recientes && recientes.length > 0 && ejercicioIds.length > 0) {
+      const ordenSesion = new Map(recientes.map((r, i) => [r.id as string, i]))
+      const { data: anteriores } = await supabase
         .from('sesion_series')
-        .select('rutina_ejercicio_id, peso_kg, repeticiones')
-        .eq('sesion_id', lastSession.id)
+        .select('sesion_id, numero_serie, peso_kg, repeticiones, rutina_ejercicios!inner(ejercicio_id)')
+        .in('sesion_id', recientes.map((r) => r.id))
+        .in('rutina_ejercicios.ejercicio_id', ejercicioIds)
         .eq('completada', true)
-        .order('numero_serie', { ascending: true })
 
-      if (lastSeries) {
-        // Tomar el primer valor completado por ejercicio (número de serie más bajo)
-        for (const s of lastSeries) {
-          if (!prefillMap[s.rutina_ejercicio_id]) {
-            prefillMap[s.rutina_ejercicio_id] = {
-              peso_kg: s.peso_kg,
-              repeticiones: s.repeticiones,
-            }
-          }
+      // La sesión más reciente gana; dentro de ella, la serie de número más bajo
+      const ordenadas = (anteriores ?? []).slice().sort((a, b) =>
+        (ordenSesion.get(a.sesion_id) ?? 99) - (ordenSesion.get(b.sesion_id) ?? 99) ||
+        a.numero_serie - b.numero_serie
+      )
+      for (const fila of ordenadas) {
+        const ejercicioId = (fila.rutina_ejercicios as unknown as { ejercicio_id: string } | null)?.ejercicio_id
+        if (ejercicioId && !prefillPorEjercicio[ejercicioId]) {
+          prefillPorEjercicio[ejercicioId] = { peso_kg: fila.peso_kg, repeticiones: fila.repeticiones }
         }
       }
     }
@@ -264,7 +342,7 @@ export async function obtenerSesionActiva(
         // Supabase retorna `any` sin schema generado; la columna es TEXT en DB (ver RutinaEjercicio)
         repeticiones_rutina: (ej.repeticiones as string | null) ?? '',
         series: ejSeries,
-        ultima_serie: prefillMap[ej.id] || null,
+        ultima_serie: prefillPorEjercicio[ej.ejercicio_id as string] || null,
       }
     })
 
@@ -358,8 +436,13 @@ export async function finalizarSesion(
 }
 
 /**
- * Obtener historial de sesiones finalizadas del usuario
- * Incluye el conteo de series completadas por sesión
+ * Obtener historial de sesiones finalizadas del usuario, con duración,
+ * series (hechas y totales) y kilos movidos por sesión.
+ *
+ * Trae TODAS las series de esas sesiones (no solo las completadas) para
+ * poder mostrar "10 de 12". Por eso el límite es de 30 sesiones: con ~30
+ * series cada una queda por debajo del tope de 1000 filas de Supabase.
+ * Para ver más atrás hace falta paginar.
  */
 export async function obtenerHistorialSesiones(
   supabase: SupabaseClient,
@@ -370,11 +453,11 @@ export async function obtenerHistorialSesiones(
   try {
     const { data: sesiones, error } = await supabase
       .from('sesiones')
-      .select('id, finalizada_at, rutina_dias(nombre_dia, orden)')
+      .select('id, iniciada_at, finalizada_at, rutina_dias(nombre_dia, orden)')
       .eq('user_id', userId)
       .not('finalizada_at', 'is', null)
       .order('finalizada_at', { ascending: false })
-      .limit(50) // evitar superar el límite de 1000 filas de Supabase en la query de series que sigue
+      .limit(30)
 
     if (error) {
       console.error('Error obteniendo historial:', error)
@@ -385,29 +468,43 @@ export async function obtenerHistorialSesiones(
       return { success: true, data: [] }
     }
 
-    // Obtener conteo de series completadas para todas las sesiones en una sola query
-    const sesionIds = sesiones.map(s => s.id)
-    const { data: seriesCompletadas } = await supabase
+    const { data: series, error: seriesError } = await supabase
       .from('sesion_series')
-      .select('sesion_id')
-      .in('sesion_id', sesionIds)
-      .eq('completada', true)
+      .select('sesion_id, completada, peso_kg, repeticiones')
+      .in('sesion_id', sesiones.map((s) => s.id))
 
-    // Contar por sesion_id en JS
-    const conteoMap: Record<string, number> = {}
-    for (const s of seriesCompletadas || []) {
-      conteoMap[s.sesion_id] = (conteoMap[s.sesion_id] || 0) + 1
+    if (seriesError) {
+      console.error('Error obteniendo series del historial:', seriesError)
+      return { success: false, error: 'Error al cargar el historial' }
     }
 
-    const resumen: SesionResumen[] = sesiones.map(s => ({
-      id: s.id,
-      dia_nombre: (() => {
-        const rd = s.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
-        return rd ? `Día ${rd.orden} — ${rd.nombre_dia}` : ''
-      })(),
-      finalizada_at: s.finalizada_at as string,
-      series_completadas: conteoMap[s.id] || 0,
-    }))
+    const porSesion: Record<string, { hechas: number; totales: number; kg: number }> = {}
+    for (const fila of series || []) {
+      const acc = (porSesion[fila.sesion_id] ??= { hechas: 0, totales: 0, kg: 0 })
+      acc.totales += 1
+      if (fila.completada) {
+        acc.hechas += 1
+        if (fila.peso_kg !== null && fila.repeticiones !== null) {
+          acc.kg += Number(fila.peso_kg) * fila.repeticiones
+        }
+      }
+    }
+
+    const resumen: SesionResumen[] = sesiones.map((s) => {
+      const rd = s.rutina_dias as unknown as { nombre_dia: string; orden: number } | null
+      const acc = porSesion[s.id] ?? { hechas: 0, totales: 0, kg: 0 }
+      return {
+        id: s.id,
+        dia_nombre: rd ? `Día ${rd.orden} — ${rd.nombre_dia}` : '',
+        dia_orden: rd?.orden ?? null,
+        nombre_dia: rd?.nombre_dia ?? '',
+        iniciada_at: (s.iniciada_at as string | null) ?? null,
+        finalizada_at: s.finalizada_at as string,
+        series_completadas: acc.hechas,
+        series_totales: acc.totales,
+        kg_movidos: Math.round(acc.kg),
+      }
+    })
 
     return { success: true, data: resumen }
   } catch (err) {

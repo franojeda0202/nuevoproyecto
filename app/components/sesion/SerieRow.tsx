@@ -5,6 +5,7 @@ interface SerieRowProps {
   serieId: string
   pesoPrevio: number | null    // para mostrar como placeholder
   repsPrevias: number | null   // para mostrar como placeholder
+  rangoObjetivo: string        // reps objetivo de esta serie según la rutina (ej: "6-8")
   pesoActual: string
   repsActual: string
   completada: boolean
@@ -20,6 +21,7 @@ export default function SerieRow({
   serieId,
   pesoPrevio,
   repsPrevias,
+  rangoObjetivo,
   pesoActual,
   repsActual,
   completada,
@@ -49,7 +51,7 @@ export default function SerieRow({
         onChange={(e) => onPesoChange(serieId, e.target.value)}
         onBlur={() => onPesoBlur(serieId)}
         placeholder={pesoPrevio !== null ? String(pesoPrevio) : '—'}
-        className="w-20 px-2 py-2 text-center text-sm font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+        className="w-20 min-h-11 px-2 py-2 text-center text-base font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
       />
 
       {/* Input reps */}
@@ -61,21 +63,29 @@ export default function SerieRow({
         onChange={(e) => onRepsChange(serieId, e.target.value)}
         onBlur={() => onBlur(serieId)}
         placeholder={repsPrevias !== null ? String(repsPrevias) : '—'}
-        className="w-16 px-2 py-2 text-center text-sm font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
+        className="w-16 min-h-11 px-2 py-2 text-center text-base font-medium border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 outline-none"
       />
+
+      {/* Reps objetivo de esta serie */}
+      <span
+        className="w-11 text-center text-sm font-medium text-slate-500 truncate flex-shrink-0"
+        title={rangoObjetivo || undefined}
+      >
+        {rangoObjetivo || '—'}
+      </span>
 
       {/* Toggle completada */}
       <button
         type="button"
         onClick={() => onToggleCompletada(serieId)}
-        className={`ml-auto w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
+        className={`ml-auto w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
           completada
             ? 'bg-yellow-500 text-black'
             : 'bg-white border-2 border-slate-200 text-slate-200'
         }`}
         aria-label={completada ? 'Marcar como incompleta' : 'Marcar como completada'}
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
         </svg>
       </button>
