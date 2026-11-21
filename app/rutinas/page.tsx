@@ -65,7 +65,7 @@ export default function RutinasPage() {
 
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
-  const { loading: loadingAuth, authenticated, user, userId } = useAuth()
+  const { loading: loadingAuth, authenticated, userId } = useAuth()
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -411,27 +411,27 @@ export default function RutinasPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
           <div>
-            <h1 className="pl-14 md:pl-0 text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
+            <h1 className="text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
               Mi Rutina Activa
             </h1>
-            <div className="h-0.5 w-12 bg-yellow-500 rounded-full mb-2" />
-            <p className="text-slate-600 font-medium text-sm">
-              {user?.email}
-            </p>
+            <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             {rutinaData && (
               <button
                 type="button"
                 onClick={() => router.push('/entrenar')}
-                className="px-6 py-3 bg-neutral-900 text-white rounded-xl font-semibold hover:bg-neutral-800 transition-all duration-200 shadow-lg shadow-neutral-900/10"
+                className="h-12 px-6 bg-yellow-500 text-black rounded-xl font-bold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
               >
                 + Entrenar
               </button>
             )}
+            {/* Secundario a propósito: en el gimnasio la acción es entrenar, y una
+                rutina nueva reemplaza la actual */}
             <button
+              type="button"
               onClick={handleGenerateNew}
-              className="px-6 py-3 bg-yellow-500 text-black rounded-xl font-semibold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
+              className="h-12 px-6 bg-white border-2 border-neutral-900 text-neutral-900 rounded-xl font-semibold hover:bg-neutral-100 transition-all duration-200"
             >
               Nueva Rutina
             </button>
@@ -469,7 +469,8 @@ export default function RutinasPage() {
                   <h2 className="text-3xl md:text-4xl font-display text-slate-900 tracking-wider uppercase leading-none mb-1">
                     {rutinaData.rutina.nombre || 'Mi Rutina'}
                   </h2>
-                  <p className="text-sm text-slate-400 flex items-center gap-1.5 flex-wrap">
+                  {/* Ayuda de escritorio: en el celular los botones ya se explican solos */}
+                  <p className="hidden md:flex text-sm text-slate-500 items-center gap-1.5 flex-wrap">
                     Clic en
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -489,7 +490,8 @@ export default function RutinasPage() {
                 </div>
 
                 {/* Botones de exportación (Premium) */}
-                <div className="flex items-center gap-2 self-start md:self-center">
+                {/* Ocultos en el celular: son promesas premium y ocupaban lugar sin servir en el gimnasio */}
+                <div className="hidden md:flex items-center gap-2 self-center">
                   <button
                     onClick={() => {
                       if (!trackedPremiumFeatures.current.has('csv_export')) {

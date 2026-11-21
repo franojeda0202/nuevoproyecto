@@ -53,7 +53,7 @@ export function useCheckRoutine(
           setRoutineId(data.id)
 
           if (redirectOnFound) {
-            router.push('/rutinas')
+            router.push('/hoy')
           }
         } else {
           setHasRoutine(false)
