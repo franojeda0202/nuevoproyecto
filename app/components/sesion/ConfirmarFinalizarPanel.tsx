@@ -51,7 +51,7 @@ export default function ConfirmarFinalizarPanel({
         aria-labelledby="titulo-finalizar"
         className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-y-auto"
       >
-        <div className="max-w-lg mx-auto px-4 pt-3 pb-8 flex flex-col gap-5">
+        <div className="max-w-lg mx-auto px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+2rem)] flex flex-col gap-5">
           <div className="flex justify-center" aria-hidden="true">
             <div className="w-10 h-1 bg-slate-300 rounded-full" />
           </div>

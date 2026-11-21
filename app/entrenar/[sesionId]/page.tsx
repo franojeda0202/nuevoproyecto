@@ -379,7 +379,7 @@ export default function SesionActivaPage() {
   return (
     <AppLayout>
 
-    <div className={`min-h-screen app-page-bg px-4 md:px-8 ${timerCorriendo ? 'pb-48' : 'pb-28'}`}>
+    <div className={`min-h-screen app-page-bg px-4 md:px-8 ${timerCorriendo ? 'pb-[calc(env(safe-area-inset-bottom)+12rem)]' : 'pb-[calc(env(safe-area-inset-bottom)+7rem)]'}`}>
       <div className="max-w-2xl mx-auto">
         {/* Encabezado fijo: el progreso se ve siempre, aunque bajes por los ejercicios */}
         <div className="sticky top-0 z-20 -mx-4 md:-mx-8 px-4 md:px-8 pt-2 pb-3 mb-4 bg-slate-100/95 backdrop-blur-sm border-b border-slate-200">
@@ -541,7 +541,7 @@ export default function SesionActivaPage() {
       </div>
 
       {/* Barra inferior sticky. md:left: en escritorio no se mete debajo del panel lateral, contraído o no */}
-      <div className="fixed bottom-0 left-0 md:left-[var(--ancho-lateral)] right-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white/95 backdrop-blur-sm border-t border-slate-200">
+      <div className="fixed bottom-0 left-0 md:left-[var(--ancho-lateral)] right-0 z-30 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-white/95 backdrop-blur-sm border-t border-slate-200">
         {timerCorriendo && (
           <div className="max-w-lg mx-auto mb-3">
             <BandaDescanso

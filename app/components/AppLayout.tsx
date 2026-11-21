@@ -163,7 +163,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* pb: deja lugar para las barras fijas de abajo, que si no tapan lo último de cada pantalla */}
       <div
         className={`flex-1 md:ml-[var(--ancho-lateral)] min-w-0 transition-[margin] duration-200 ${
-          enSesionActiva ? '' : mostrarBarraEnCurso ? 'pb-44 md:pb-28' : 'pb-24 md:pb-0'
+          enSesionActiva ? '' : mostrarBarraEnCurso ? 'pb-[calc(env(safe-area-inset-bottom)+11rem)] md:pb-28' : 'pb-[calc(env(safe-area-inset-bottom)+6rem)] md:pb-0'
         }`}
       >
         {children}
@@ -180,7 +180,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Navegación (móvil): se alcanza con el pulgar, a diferencia del menú hamburguesa */}
         <nav
           aria-label="Navegación principal"
-          className="md:hidden bg-white border-t border-slate-200 grid grid-cols-4 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+          className="md:hidden bg-white border-t border-slate-200 grid grid-cols-4 px-2 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)]"
         >
           {NAV_ITEMS.map((item) => {
             const activo = isActivo(item)
@@ -224,7 +224,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             role="dialog"
             aria-modal="true"
             aria-labelledby="titulo-cuenta"
-            className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-3xl px-4 pt-3 pb-8 flex flex-col gap-4"
+            className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white rounded-t-3xl px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+2rem)] flex flex-col gap-4"
           >
             <div className="flex justify-center" aria-hidden="true">
               <div className="w-10 h-1 bg-slate-300 rounded-full" />

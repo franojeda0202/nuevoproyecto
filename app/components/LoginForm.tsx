@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { validatePassword } from '@/lib/utils/validaciones'
+import PasswordInput from '@/app/components/PasswordInput'
 
 type AuthMode = 'login' | 'signup' | 'forgot'
 
@@ -371,8 +372,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
                     </span>
                   )}
                 </label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={password}
                   onChange={handlePasswordChange}
                   className={`w-full px-4 py-3.5 h-12 border rounded-xl bg-white text-gray-900 font-medium focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 transition-all outline-none ${
