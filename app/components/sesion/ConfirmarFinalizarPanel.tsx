@@ -10,6 +10,7 @@ interface ConfirmarFinalizarPanelProps {
   finalizando: boolean
   onSeguir: () => void
   onConfirmar: () => void
+  onMarcarSinMarcar: () => void
 }
 
 const formatoKg = new Intl.NumberFormat('es-AR')
@@ -23,6 +24,7 @@ export default function ConfirmarFinalizarPanel({
   finalizando,
   onSeguir,
   onConfirmar,
+  onMarcarSinMarcar,
 }: ConfirmarFinalizarPanelProps) {
   const seguirRef = useRef<HTMLButtonElement>(null)
 
@@ -66,6 +68,31 @@ export default function ConfirmarFinalizarPanel({
             <p className="text-slate-600">Después ya no se puede editar.</p>
           </div>
 
+          {/* Olvido típico: cargar peso y reps y no tocar el círculo. Sin esto,
+              la sesión puede guardarse como vacía y no contar en la semana. */}
+          {resumen.sinMarcar.length > 0 && (
+            <div className="bg-yellow-50 border border-yellow-300 rounded-2xl px-4 py-3 flex flex-col gap-3">
+              <div>
+                <p className="font-bold text-slate-900">
+                  {resumen.sinMarcar.length === 1
+                    ? 'Cargaste 1 serie sin marcarla'
+                    : `Cargaste ${resumen.sinMarcar.length} series sin marcarlas`}
+                </p>
+                <p className="text-sm text-slate-700">
+                  Tienen peso y repeticiones, pero no las tocaste como hechas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onMarcarSinMarcar}
+                disabled={finalizando}
+                className="h-11 bg-neutral-900 text-white rounded-xl font-bold hover:bg-neutral-800 transition-colors disabled:opacity-50"
+              >
+                {resumen.sinMarcar.length === 1 ? 'Marcarla como hecha' : 'Marcarlas como hechas'}
+              </button>
+            </div>
+          )}
+
           {seriesFaltantes > 0 && (
             <div className="bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3">
               <p className="font-bold text-orange-900">
@@ -108,7 +135,7 @@ export default function ConfirmarFinalizarPanel({
               type="button"
               onClick={onSeguir}
               disabled={finalizando}
-              className="h-14 bg-yellow-500 text-black rounded-2xl font-bold text-lg hover:bg-yellow-400 active:bg-yellow-600 transition-colors disabled:opacity-50"
+              className="h-14 bg-yellow-500 text-black rounded-2xl font-bold text-lg hover:bg-yellow-400 active:bg-yellow-600 transition-colors disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
             >
               Seguir entrenando
             </button>

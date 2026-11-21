@@ -19,6 +19,7 @@ import {
 } from '@/lib/services/rutina-service'
 import { trackEvent, trackError } from '@/lib/analytics'
 import PremiumModal from '@/app/components/PremiumModal'
+import RutinaLectura from '@/app/components/rutina/RutinaLectura'
 import {
   DndContext,
   closestCenter,
@@ -41,6 +42,8 @@ interface RutinaData {
 }
 
 export default function RutinasPage() {
+  // Por defecto la rutina se lee; editar es la excepción (el coach la cambia cada varios meses)
+  const [editando, setEditando] = useState(false)
   const [rutinaData, setRutinaData] = useState<RutinaData | null>(null)
   const [loadingRutina, setLoadingRutina] = useState(true)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -408,34 +411,44 @@ export default function RutinasPage() {
     <AppLayout>
     <div className="min-h-screen app-page-bg p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 gap-4">
-          <div>
+        {/* Header: la rutina es algo que ya tenés; editar queda detrás de un botón */}
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div className="min-w-0">
             <h1 className="text-3xl md:text-6xl font-display text-slate-900 tracking-widest uppercase leading-none mb-1">
-              Mi Rutina Activa
+              Tu rutina
             </h1>
-            <div className="h-0.5 w-12 bg-yellow-500 rounded-full" />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="h-0.5 w-12 bg-yellow-500 rounded-full mb-2" />
             {rutinaData && (
-              <button
-                type="button"
-                onClick={() => router.push('/entrenar')}
-                className="h-12 px-6 bg-yellow-500 text-black rounded-xl font-bold hover:bg-yellow-400 transition-all duration-200 shadow-lg shadow-neutral-900/10"
-              >
-                + Entrenar
-              </button>
+              <p className="text-slate-600 break-words">
+                <span className="font-semibold text-slate-900">{rutinaData.rutina.nombre || 'Mi rutina'}</span>
+                {' · '}
+                {rutinaData.dias.length} días
+              </p>
             )}
-            {/* Secundario a propósito: en el gimnasio la acción es entrenar, y una
-                rutina nueva reemplaza la actual */}
+          </div>
+          {rutinaData && (
             <button
               type="button"
-              onClick={handleGenerateNew}
-              className="h-12 px-6 bg-white border-2 border-neutral-900 text-neutral-900 rounded-xl font-semibold hover:bg-neutral-100 transition-all duration-200"
+              onClick={() => setEditando((e) => !e)}
+              aria-pressed={editando}
+              className={`h-11 px-4 flex-shrink-0 rounded-xl font-semibold transition-colors flex items-center gap-2 ${
+                editando
+                  ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                  : 'bg-white border border-slate-300 text-slate-900 hover:bg-slate-50'
+              }`}
             >
-              Nueva Rutina
+              {editando ? (
+                'Listo'
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Editar
+                </>
+              )}
             </button>
-          </div>
+          )}
         </div>
 
         {!rutinaData ? (
@@ -459,6 +472,21 @@ export default function RutinasPage() {
               </svg>
               Generar mi primera rutina
             </button>
+          </div>
+        ) : !editando ? (
+          <div className="max-w-2xl">
+            <RutinaLectura dias={rutinaData.dias} />
+            {/* Rutina nueva: discreto, porque reemplaza la actual y se usa cada varios meses */}
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <p className="text-sm text-slate-600 mb-2">¿Te cambiaron la rutina?</p>
+              <button
+                type="button"
+                onClick={handleGenerateNew}
+                className="h-11 px-4 rounded-xl border border-slate-300 bg-white text-slate-900 font-semibold hover:bg-slate-50 transition-colors"
+              >
+                Generar una rutina nueva
+              </button>
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-2xl shadow-xl shadow-slate-900/10 border border-slate-200/80 overflow-hidden relative">
