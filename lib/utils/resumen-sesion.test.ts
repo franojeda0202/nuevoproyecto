@@ -34,7 +34,24 @@ describe('resumirSesion', () => {
   })
 
   it('sesión vacía', () => {
-    expect(resumirSesion([])).toEqual({ seriesCompletadas: 0, seriesTotales: 0, kgMovidos: 0, incompletos: [] })
+    expect(resumirSesion([])).toEqual({ seriesCompletadas: 0, seriesTotales: 0, kgMovidos: 0, incompletos: [], sinMarcar: [] })
+  })
+})
+
+describe('sinMarcar', () => {
+  it('series con peso y reps cargados pero sin marcar', () => {
+    const r = resumirSesion([
+      {
+        nombre: 'Press',
+        series: [
+          { id: 'a', peso_kg: '70', repeticiones: '8', completada: true },
+          { id: 'b', peso_kg: '70', repeticiones: '8', completada: false },
+          { id: 'c', peso_kg: '70', repeticiones: '', completada: false },
+          { id: 'd', peso_kg: '', repeticiones: '', completada: false },
+        ],
+      },
+    ])
+    expect(r.sinMarcar).toEqual(['b'])
   })
 })
 

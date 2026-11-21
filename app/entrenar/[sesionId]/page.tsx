@@ -296,6 +296,40 @@ export default function SesionActivaPage() {
 
   const cerrarConfirmar = useCallback(() => setConfirmarAbierto(false), [])
 
+  // Desde la confirmación de terminar: marca como hechas las series que tienen
+  // peso y reps cargados pero quedaron sin marcar. Se leen del estado actual y
+  // se guardan fuera del updater (mismo patrón que handleBlur).
+  const marcarSinMarcar = async () => {
+    if (!sesion) return
+    const ids = new Set(resumirSesion(sesion.ejercicios).sinMarcar)
+    if (ids.size === 0) return
+    const aGuardar = sesion.ejercicios.flatMap((ej) => ej.series).filter((s) => ids.has(s.id))
+
+    setSesion((prev) => prev && {
+      ...prev,
+      ejercicios: prev.ejercicios.map((ej) => ({
+        ...ej,
+        series: ej.series.map((s) => (ids.has(s.id) ? { ...s, completada: true } : s)),
+      })),
+    })
+
+    // Se espera a que se guarden: si enseguida se toca "Terminar", la sesión
+    // no puede quedar finalizada con estas series todavía sin marcar en la base
+    const resultados = await Promise.all(aGuardar.map((s) =>
+      actualizarSerie(supabase, {
+        id: s.id,
+        sesionId,
+        peso_kg: s.peso_kg ? parseFloat(s.peso_kg) : null,
+        repeticiones: s.repeticiones ? parseInt(s.repeticiones) : null,
+        completada: true,
+      })
+    ))
+    if (resultados.some((r) => !r.success)) {
+      toast.error('Algunas series no se pudieron guardar. Revisá tu conexión.')
+    }
+    trackEvent('series_marcadas_al_terminar', { cantidad: aGuardar.length })
+  }
+
   // Desde el panel: además de arrancar, recuerda la duración para los automáticos
   const handleTimerStart = (segundos: number) => {
     setDescansoSegundos(segundos)
@@ -599,6 +633,7 @@ export default function SesionActivaPage() {
       finalizando={finalizando}
       onSeguir={cerrarConfirmar}
       onConfirmar={handleFinalizar}
+      onMarcarSinMarcar={marcarSinMarcar}
     />
     <TemporizadorPanel
       isOpen={panelOpen}

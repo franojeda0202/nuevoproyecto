@@ -3,6 +3,7 @@
 // como string) y no toca Supabase.
 
 export interface SerieParaResumen {
+  id?: string
   peso_kg: string
   repeticiones: string
   completada: boolean
@@ -25,6 +26,11 @@ export interface ResumenSesion {
   /** Suma de peso × reps de las series completadas que tienen los dos datos. */
   kgMovidos: number
   incompletos: EjercicioIncompleto[]
+  /**
+   * Series con peso y repeticiones cargados pero sin marcar como hechas.
+   * Casi siempre es un olvido: se cargan los números y no se toca el círculo.
+   */
+  sinMarcar: string[]
 }
 
 function numero(valor: string): number | null {
@@ -38,11 +44,18 @@ export function resumirSesion(ejercicios: EjercicioParaResumen[]): ResumenSesion
   let seriesTotales = 0
   let kgMovidos = 0
   const incompletos: EjercicioIncompleto[] = []
+  const sinMarcar: string[] = []
 
   for (const ej of ejercicios) {
     const hechas = ej.series.filter((s) => s.completada)
     seriesTotales += ej.series.length
     seriesCompletadas += hechas.length
+
+    for (const s of ej.series) {
+      if (!s.completada && s.id && numero(s.peso_kg) !== null && numero(s.repeticiones) !== null) {
+        sinMarcar.push(s.id)
+      }
+    }
 
     for (const s of hechas) {
       const peso = numero(s.peso_kg)
@@ -55,7 +68,7 @@ export function resumirSesion(ejercicios: EjercicioParaResumen[]): ResumenSesion
     }
   }
 
-  return { seriesCompletadas, seriesTotales, kgMovidos: Math.round(kgMovidos), incompletos }
+  return { seriesCompletadas, seriesTotales, kgMovidos: Math.round(kgMovidos), incompletos, sinMarcar }
 }
 
 /** "58 min", "1 h 05 min". Menos de un minuto cuenta como 1 min. */
